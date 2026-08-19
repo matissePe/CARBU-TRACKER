@@ -154,8 +154,58 @@ un escalier, à tracer en `stepAfter`.
 Les deux sources partagent exactement les mêmes `id`, `maj` et `valeur` : la déduplication fonctionne
 telle quelle entre backfill et flux, sans réconciliation particulière.
 
+## Granularité de l'historique
+
+Mesuré le 19/08/2026 sur les 9 stations du périmètre, années 2007 à 2026.
+
+La granularité est **événementielle, pas périodique** : une ligne = un changement de prix,
+horodaté à la seconde. Il n'y a donc pas de « pas de temps » fixe, mais en pratique la fréquence
+est quasi quotidienne par carburant.
+
+| Année | Stations | Points/an/station | Écart médian | Écart moyen | % d'écarts < 2 j |
+|---|---|---|---|---|---|
+| 2007 | 6 | 189 | 2,0 j | 3,3 j | 53 % |
+| 2010 | 6 | 342 | 1,0 j | 2,4 j | 65 % |
+| 2013 | 6 | 502 | 1,0 j | 2,2 j | 69 % |
+| 2016 | 9 | 845 | 1,0 j | 1,5 j | 85 % |
+| 2019 | 8 | 864 | 1,0 j | 1,5 j | 88 % |
+| 2022 | 9 | 784 | 1,0 j | 1,7 j | 78 % |
+| 2024 | 9 | 854 | 1,0 j | 1,7 j | 82 % |
+| 2025 | 9 | 810 | 1,0 j | 1,8 j | 82 % |
+| 2026 (au 19/08) | 9 | 532 | 1,0 j | 1,7 j | 80 % |
+
+Détail par carburant sur 2025 :
+
+| Carburant | Stations qui le vendent | Points/station/an | Écart médian | Plus longue période sans changement |
+|---|---|---|---|---|
+| Gazole | 9 | 221 | 1,0 j | 30 j |
+| E10 | 8 | 226 | 1,0 j | 30 j |
+| SP98 | 9 | 206 | 1,0 j | 30 j |
+| E85 | 6 | 176 | 1,0 j | 135 j |
+| SP95 | 3 | 130 | 1,0 j | 26 j |
+| GPLc | 2 | 98 | 1,0 j | 84 j |
+
+### Ce qu'il faut en retenir pour l'UI
+
+- Environ **200 changements de prix par an et par carburant**, soit un changement tous les 1 à 2 jours.
+  Largement suffisant pour des tendances 7 / 30 / 90 jours, et même pour un zoom sur une semaine.
+- Les écarts maximums (30 j sur le gazole, 135 j sur l'E85) sont **réels, pas des trous de données** :
+  le prix n'a simplement pas bougé. C'est exactement pourquoi la courbe doit être un escalier
+  (`stepAfter`) et non une interpolation linéaire, qui inventerait des variations inexistantes.
+- **La profondeur utile dépend du carburant** :
+  - Gazole et SP95 : depuis 2007
+  - E10 : depuis ~2010
+  - SP98 : depuis ~2013
+  - E85 : depuis ~2016
+  - GPLc : quasi inexistant avant 2022 (2 stations seulement aujourd'hui)
+  → L'UI doit ne proposer que les carburants réellement distribués par la station sélectionnée,
+  et ne pas laisser croire à un historique de 19 ans pour l'E85.
+- Les premières années sont plus grossières (2007 : 1 changement tous les 2 jours, 6 stations
+  seulement). La qualité devient homogène **à partir de 2016**.
+
 ## Volumétrie
 
-~4 800 changements de prix en 2026 (jusqu'au 19/08) pour les stations de Vannes et Séné.
-Sur 19 ans, l'ordre de grandeur est de quelques dizaines de milliers de lignes.
-SQLite est très largement suffisant.
+Environ **100 000 lignes** pour le backfill complet 2007→2026 sur les 9 stations
+(entre 5 000 et 8 000 changements de prix par an depuis 2016).
+SQLite est très largement suffisant : une table `prices` indexée sur `(station_id, fuel, recorded_at)`
+rend chaque requête de courbe instantanée.

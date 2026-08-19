@@ -51,8 +51,14 @@ Les trois pièges les plus coûteux, en résumé :
   recorded_at (chaîne naïve ISO en heure de Paris, telle que fournie par la source).
   - Clé unique `(station_id, fuel, recorded_at)` → ingestion **idempotente**, backfill et flux
     peuvent se recouvrir sans dégât.
-- Chaque ligne est un **changement de prix**, pas un relevé périodique. La courbe se trace donc en
-  escalier (`stepAfter`), et le prix « du jour J » est le dernier point antérieur à J.
+- Chaque ligne est un **changement de prix**, pas un relevé périodique : ~200 par an et par carburant,
+  soit un changement tous les 1 à 2 jours. La courbe se trace donc en escalier (`stepAfter`) et jamais
+  en interpolation linéaire, qui inventerait des variations inexistantes. Le prix « du jour J » est le
+  dernier point antérieur à J.
+- Backfill complet estimé à ~100 000 lignes pour les 9 stations sur 2007→2026.
+- **La profondeur d'historique dépend du carburant** (Gazole/SP95 depuis 2007, E10 ~2010, SP98 ~2013,
+  E85 ~2016, GPLc quasi rien avant 2022). L'UI ne doit proposer que les carburants réellement
+  distribués par la station sélectionnée. Détail dans docs/DATA-SOURCE.md.
 
 ## Règles de travail
 
