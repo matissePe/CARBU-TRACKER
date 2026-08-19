@@ -38,3 +38,8 @@ Thumbs.db
 
 # tests / couverture
 coverage/
+
+# next
+.next/
+next-env.d.ts
+*.tsbuildinfo

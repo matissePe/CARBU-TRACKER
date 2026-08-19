@@ -17,7 +17,7 @@ Tout le reste est hors périmètre tant que ce n'est pas explicitement demandé.
 
 Deux sources publiques complémentaires, sous Licence Ouverte v2.0, sans authentification.
 👉 **Tout est documenté et vérifié dans [docs/DATA-SOURCE.md](docs/DATA-SOURCE.md)** — le lire avant
-d'écrire la moindre ligne d'ingestion. Il contient 7 pièges vérifiés sur les vraies données ;
+d'écrire la moindre ligne d'ingestion. Il contient 11 pièges vérifiés sur les vraies données ;
 ne pas les redécouvrir à la main.
 
 1. **Flux instantané** (Opendatasoft Explore v2.1, `data.economie.gouv.fr`) — prix actuels,
@@ -34,14 +34,30 @@ Les trois pièges les plus coûteux, en résumé :
 - Le champ `ville` a une casse incohérente et le CP 56000 déborde sur Ploeren → le périmètre est une
   **liste explicite d'ids de stations** ([docs/STATIONS.md](docs/STATIONS.md)), pas un filtre géographique.
 - Les données **ne contiennent ni nom ni enseigne** de station : c'est exclu à la source. Correspondance manuelle.
+- L'**unité des prix change en 2022** : millièmes entiers avant, euros décimaux après. `toMilli()`
+  tranche sur l'ordre de grandeur, ne pas le « simplifier ».
 
-## Stack (hypothèse initiale, à confirmer)
+## Stack (en place)
 
-- **Next.js (App Router) + TypeScript** — front + routes API dans un seul projet.
-- **SQLite** (fichier `data/carbu.db`) via un client léger — suffisant pour un usage perso.
-- **Recharts** pour les courbes.
-- **Tailwind CSS** pour le style.
-- Script d'ingestion `scripts/ingest.ts` lancé manuellement ou par cron/launchd.
+- **Next.js 16 (App Router) + React 19 + TypeScript**. Node 24 (`.nvmrc`) — Next exige ≥ 18.18.
+- **SQLite** (`data/carbu.db`) via `better-sqlite3`, déclaré dans `serverExternalPackages`.
+- **Recharts** pour les courbes, **Tailwind CSS 4** pour le style.
+- **Tout tourne en local sur le Mac** : pas de déploiement, pas de base distante.
+  L'ingestion est planifiée par launchd (`scripts/launchd/`), toutes les 30 minutes.
+- `tsx` pour exécuter les scripts TypeScript sans étape de build.
+
+### Carte du code
+
+| Fichier | Rôle |
+|---|---|
+| `src/config/stations.ts` | périmètre : les 9 ids suivis, et l'enseigne saisie à la main |
+| `src/lib/fuels.ts` | carburants, mapping vers la source, conversion des prix en millièmes |
+| `src/lib/db.ts` | connexion SQLite, schéma, synchro des stations |
+| `src/lib/prices.ts` | écriture idempotente, lecture de l'historique, filtrage des pics aberrants |
+| `src/lib/paris-time.ts` | manipulation des horodatages naïfs en heure de Paris |
+| `src/lib/trends.ts` | variations 7/30/90 j, min/max, moyenne pondérée, classement |
+| `scripts/backfill.ts` | archives annuelles → base (streaming, ISO-8859-1) |
+| `scripts/ingest.ts` | flux instantané → base |
 
 ## Modèle de données (cible)
 
@@ -78,14 +94,15 @@ Les trois pièges les plus coûteux, en résumé :
 
 ## Commandes
 
-_(à créer avec le projet — mettre à jour cette section dès que le `package.json` existe)_
+Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop ancien).
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | serveur de dev |
-| `npm run build` | build de production |
-| `npm run ingest` | récupère les prix du jour et les insère en base |
+| `npm run dev` | serveur de dev sur http://localhost:3000 |
+| `npm run build` / `npm run start` | build et serveur de production |
+| `npm run ingest` | récupère les prix actuels et insère les changements |
 | `npm run backfill` | importe les archives annuelles 2007→année courante |
+| `npm run backfill -- 2024 2026` | rejoue une plage précise |
 | `npm run lint` / `npm run typecheck` | qualité |
 
 ## État d'avancement
@@ -94,11 +111,14 @@ _(à créer avec le projet — mettre à jour cette section dès que le `package
 - [x] Valider la source de données et son schéma ([docs/DATA-SOURCE.md](docs/DATA-SOURCE.md))
 - [x] Recenser les stations de Vannes et Séné ([docs/STATIONS.md](docs/STATIONS.md))
 - [x] Trancher le cas de la station 56000008 → elle est à Vannes, incluse
-- [ ] Renseigner les enseignes des 9 stations dans docs/STATIONS.md
-- [ ] Scaffolding Next.js + TypeScript
-- [ ] Schéma SQLite + migration initiale
-- [ ] Backfill depuis les archives annuelles 2007→2026 (parsing XML en streaming)
-- [ ] Script d'ingestion idempotent depuis le flux instantané
-- [ ] UI : sélection station + carburant
-- [ ] UI : courbe d'historique (stepAfter)
-- [ ] UI : indicateurs de tendance
+- [x] Scaffolding Next.js + TypeScript
+- [x] Schéma SQLite
+- [x] Backfill des archives annuelles 2007→2026 — 98 069 lignes
+- [x] Script d'ingestion idempotent depuis le flux instantané
+- [x] UI : sélection station + carburant + période
+- [x] UI : courbe d'historique (stepAfter)
+- [x] UI : indicateurs de tendance et classement des stations
+- [ ] **Renseigner les enseignes des 9 stations dans `src/config/stations.ts`** (seul point bloquant
+      pour la lisibilité : sans elles, l'UI n'affiche que des adresses)
+- [ ] Installer l'agent launchd d'ingestion (cf. `scripts/launchd/`)
+- [ ] Éventuellement : comparer plusieurs stations sur une même courbe

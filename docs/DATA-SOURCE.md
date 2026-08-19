@@ -138,6 +138,34 @@ un escalier, à tracer en `stepAfter`.
    pour la Bretagne (`-279400` = −2.794). Utiliser `geom` dans le flux ODS, ou diviser par 100000
    dans les archives.
 
+
+8. **Les archives sont encodées en ISO-8859-1**, pas en UTF-8 (`<?xml version="1.0"
+   encoding="ISO-8859-1"?>`). Décoder en latin1, sinon « Séné » devient « SÃ©nÃ© ».
+
+9. **Le séparateur date/heure change en 2015.** Les archives 2007→2014 écrivent
+   `maj="2007-01-02 07:12:15"` (espace, parfois avec des microsecondes), celles de 2015 et
+   après `maj="2015-01-02T11:01:45"` (T). Il faut normaliser sur le `T`, sinon un même
+   changement de prix peut être stocké deux fois et le tri chronologique de SQLite mélange les
+   deux formats (l'espace se classe avant le `T`).
+
+10. **L'unité des prix change en 2022.** C'est le piège le plus coûteux après le fuseau :
+    - archives **2007→2021** : entiers en **millièmes d'euro** — `valeur="1141"` = 1,141 €
+    - archives **2022→** et flux instantané : **euros décimaux** — `valeur="1.572"`
+
+    Multiplier aveuglément par 1000 donne des gazoles à 1 141 € le litre sur 15 ans d'historique.
+    Trancher sur l'ordre de grandeur plutôt que sur l'année (les deux échelles ne se recouvrent
+    pas : en euros un prix reste sous 10, en millièmes il dépasse 200) rend la règle robuste si
+    la source rebascule.
+
+11. **La source contient de vraies fautes de saisie**, rares mais dévastatrices pour les min/max.
+    Deux familles, qui demandent deux parades :
+    - **Hors bornes** : 5 relevés sur 98 000 (E10 à `4469`, gazole à `5.579`, E10 à `304`…).
+      Un simple contrôle de plausibilité (0,50 € à 3,50 €) les élimine à l'ingestion.
+    - **Dans les bornes, mais contredites en quelques minutes** : 11 relevés sur 98 000. Par
+      exemple le gazole publié à 1,329 € le 07/04/2026 à 07:20 puis remis à 2,329 € à 07:54.
+      La valeur est plausible : seule sa brièveté combinée au retour au niveau précédent la
+      trahit. Filtré à la lecture, pas à l'ingestion, pour garder la table fidèle à la source.
+
 ---
 
 ## Stratégie d'ingestion
@@ -193,11 +221,14 @@ Détail par carburant sur 2025 :
   le prix n'a simplement pas bougé. C'est exactement pourquoi la courbe doit être un escalier
   (`stepAfter`) et non une interpolation linéaire, qui inventerait des variations inexistantes.
 - **La profondeur utile dépend du carburant** :
-  - Gazole et SP95 : depuis 2007
-  - E10 : depuis ~2010
-  - SP98 : depuis ~2013
-  - E85 : depuis ~2016
-  - GPLc : quasi inexistant avant 2022 (2 stations seulement aujourd'hui)
+  | Carburant | Premier relevé | Lignes en base | Vraiment exploitable à partir de |
+  |---|---|---|---|
+  | Gazole | 2007 | 30 718 | 2007 |
+  | SP95 | 2007 | 14 086 | 2007 (mais 3 stations seulement aujourd'hui) |
+  | E10 | 2009 | 22 060 | 2010 |
+  | SP98 | 2013 | 21 353 | 2013 |
+  | E85 | 2010 | 8 648 | 2016 |
+  | GPLc | 2007 | 1 224 | 2022 (2 stations) |
   → L'UI doit ne proposer que les carburants réellement distribués par la station sélectionnée,
   et ne pas laisser croire à un historique de 19 ans pour l'E85.
 - Les premières années sont plus grossières (2007 : 1 changement tous les 2 jours, 6 stations
@@ -205,7 +236,8 @@ Détail par carburant sur 2025 :
 
 ## Volumétrie
 
-Environ **100 000 lignes** pour le backfill complet 2007→2026 sur les 9 stations
-(entre 5 000 et 8 000 changements de prix par an depuis 2016).
+**98 069 lignes** pour le backfill complet 2007→2026 sur les 9 stations
+(entre 5 000 et 8 000 changements de prix par an depuis 2016), 5 relevés écartés comme
+invraisemblables.
 SQLite est très largement suffisant : une table `prices` indexée sur `(station_id, fuel, recorded_at)`
 rend chaque requête de courbe instantanée.
