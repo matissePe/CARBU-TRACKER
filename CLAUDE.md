@@ -76,6 +76,29 @@ Les trois pièges les plus coûteux, en résumé :
   E85 ~2016, GPLc quasi rien avant 2022). L'UI ne doit proposer que les carburants réellement
   distribués par la station sélectionnée. Détail dans docs/DATA-SOURCE.md.
 
+## Décisions produit (tranchées le 19/08/2026)
+
+L'app répond à **deux questions**, dans cet ordre : *où c'est le moins cher* et *quand y aller*.
+Ce n'est pas un explorateur d'historique — la courbe justifie le conseil, elle ne le remplace pas.
+
+- **Le gazole est le carburant par défaut** (voiture au gazole). Les cinq autres restent accessibles
+  mais ne sont pas mis en avant.
+- **Rythme d'achat : environ un plein par mois.** L'utilisateur peut donc décaler son plein de
+  quelques jours ; c'est ce qui rend le conseil « maintenant ou plus tard » utile.
+- **Réservoir de référence : 50 L** (Peugeot 207 SW de 2008) — voir `src/config/vehicle.ts`.
+  Les écarts de prix s'affichent **en euros sur un plein**, pas en centimes par litre.
+- **Le mobile est la version de référence**, l'écran d'ordinateur est celui qui gagne de la place.
+  Les deux mises en page peuvent diverger franchement.
+- **Aucune projection de prix.** L'app affiche une position dans la fourchette et une direction
+  récente, jamais une prévision : une tendance s'inverse en trois jours.
+
+### Écarté explicitement
+
+- **Pas de carte.** Imposerait un fond de carte externe à une app qui tourne en local ; 9 stations
+  connues, l'enseigne suffit.
+- **Pas de superposition de plusieurs stations sur une même courbe.** Illisible au-delà de
+  4 séries qui se croisent.
+
 ## Règles de travail
 
 - **Langue** : réponses et commentaires de commit en français ; code, noms de variables et de fichiers en anglais.
