@@ -41,8 +41,7 @@ Les trois pièges les plus coûteux, en résumé :
 
 - **Next.js 16 (App Router) + React 19 + TypeScript**. Node 24 (`.nvmrc`) — Next exige ≥ 18.18.
 - **SQLite** (`data/carbu.db`) via `better-sqlite3`, déclaré dans `serverExternalPackages`.
-- **Tailwind CSS 4** pour le style. Pas de bibliothèque de graphiques : la courbe est un SVG
-  généré côté serveur (`src/components/PriceChart.tsx`).
+- **Recharts** pour les courbes, **Tailwind CSS 4** pour le style.
 - **Tout tourne en local sur le Mac** : pas de déploiement, pas de base distante.
   L'ingestion est planifiée par launchd (`scripts/launchd/`), toutes les 30 minutes.
 - `tsx` pour exécuter les scripts TypeScript sans étape de build.
@@ -126,18 +125,24 @@ Trois conclusions, qui pilotent `src/lib/advice.ts` :
 chère plutôt qu'à une station quelconque vaut ~29 €/an (écart moyen mesuré de 0,048 €/L) ; le
 meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus du conseil.
 
+### Consulter depuis le téléphone
+
+`allowedDevOrigins` doit rester renseigné dans `next.config.ts`. En mode dev, Next 16 refuse de
+servir les fichiers `/_next/` à une requête venant d'une autre origine que localhost : ouvrir
+`http://192.168.x.x:3000` depuis un mobile renvoie le HTML en 200 mais des **403 sur tous les
+chunks**. La page paraît donc complète — sauf la courbe. Diagnostiqué le 19/08/2026 après une
+fausse piste sur la version de Safari : l'iPhone n'y était pour rien.
+
 ### Écarté explicitement
 
 - **Pas de carte.** Imposerait un fond de carte externe à une app qui tourne en local ; 9 stations
   connues, l'enseigne suffit.
 - **Pas de superposition de plusieurs stations sur une même courbe.** Illisible au-delà de
   4 séries qui se croisent.
-- **Aucun composant client.** La page entière est rendue côté serveur, graphique compris.
-  Recharts a été retiré le 19/08/2026 : il faisait du graphique le seul élément dépendant du
-  bundle, donc le seul à disparaître quand le JavaScript ne s'exécute pas (constaté sur iPhone).
-  Une page personnelle en lecture seule n'a aucune raison d'exiger 900 Ko de JavaScript.
-  Corollaire : pas d'infobulle au survol — sur un téléphone elle n'existe pas de toute façon.
-  Les points remarquables (plus bas de la période, prix actuel) sont étiquetés directement.
+- **Le graphique est le seul composant client de la page.** Conséquence à garder en tête :
+  si le bundle ne s'exécute pas, toute la page s'affiche normalement et **seule la courbe
+  disparaît**. Un symptôme « le graphique ne s'affiche pas » est donc presque toujours un
+  problème de chargement du JavaScript, pas un problème de graphique.
 
 ## Règles de travail
 
@@ -187,3 +192,13 @@ Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop
 - [x] Refonte autour des deux questions : conseil, jauge de position, classement, mobile d'abord
 - [ ] Alerte quand le prix descend dans le quart bas de sa fourchette 90 jours
 - [ ] Rétrospective « combien j'aurais économisé » sur 12 mois
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

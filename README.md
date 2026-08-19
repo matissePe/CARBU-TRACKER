@@ -36,10 +36,12 @@ réellement changé. Journal dans `data/ingest.log`.
 
 ## Consulter depuis le téléphone
 
-Le serveur écoute sur toutes les interfaces : depuis un appareil du même réseau Wi-Fi,
-ouvrir `http://<ip-du-mac>:3000` (`ipconfig getifaddr en0` donne l'adresse).
-La page entière, graphique compris, est rendue côté serveur — elle s'affiche même si
-le JavaScript ne s'exécute pas.
+Depuis un appareil du même réseau Wi-Fi, ouvrir `http://<ip-du-mac>:3000`
+(`ipconfig getifaddr en0` donne l'adresse).
+
+L'IP doit figurer dans `allowedDevOrigins` (`next.config.ts`), sinon Next bloque les fichiers
+`/_next/` en mode dev : la page s'affiche mais **le graphique reste vide**. Les plages privées
+courantes sont déjà autorisées ; si ton réseau utilise un autre préfixe, l'ajouter là.
 
 ## Documentation
 

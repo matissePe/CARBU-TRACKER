@@ -134,7 +134,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
             </p>
 
             <div className="mt-4">
-              <PriceChart points={chartPoints} />
+              <PriceChart points={chartPoints} seriesLabel={FUEL_META[fuel].label} />
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
