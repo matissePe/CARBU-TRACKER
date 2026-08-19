@@ -39,14 +39,25 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
   }));
   const stats = focused ? computeStats(series, focused.id, fuel) : null;
 
-  // URLs en chemins et non en paramètres de requête : un export statique n'a pas de serveur
-  // pour les lire, chaque combinaison est un fichier.
-  const href = (next: Partial<{ fuel: Fuel; stationId: number; periodKey: string }>) =>
-    pagePath({
-      fuel: next.fuel ?? fuel,
-      stationId: next.stationId ?? focused?.id ?? 0,
+  /*
+   * URLs en chemins et non en paramètres de requête : un export statique n'a pas de serveur
+   * pour les lire, chaque combinaison est un fichier.
+   *
+   * Changer de carburant impose de changer aussi de station : la station affichée ne distribue
+   * pas forcément le nouveau carburant, et surtout la page correspondante n'existerait pas.
+   * On retombe donc sur la moins chère de ce carburant — la même que la page d'accueil.
+   */
+  const href = (next: Partial<{ fuel: Fuel; stationId: number; periodKey: string }>) => {
+    const targetFuel = next.fuel ?? fuel;
+    const targetStation =
+      next.stationId ?? (targetFuel === fuel ? focused?.id : undefined) ?? cheapestFor(targetFuel);
+
+    return pagePath({
+      fuel: targetFuel,
+      stationId: targetStation,
       periodKey: next.periodKey ?? period.key,
     });
+  };
 
   const spread = rows.length > 1 ? perTank(rows[rows.length - 1].priceMilli - rows[0].priceMilli) : 0;
 
@@ -176,7 +187,7 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
           {FUELS.map((candidate) => (
             <Chip
               key={candidate}
-              href={href({ fuel: candidate, stationId: 0 })}
+              href={href({ fuel: candidate })}
               active={candidate === fuel}
             >
               {FUEL_META[candidate].label}
@@ -204,6 +215,11 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
       </section>
     </div>
   );
+}
+
+/** Station la moins chère qui distribue ce carburant — la cible par défaut d'un changement. */
+function cheapestFor(fuel: Fuel): number {
+  return ranking(fuel)[0]?.station.id ?? 0;
 }
 
 function Stat({
