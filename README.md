@@ -34,7 +34,21 @@ launchctl load ~/Library/LaunchAgents/fr.carbu-tracker.ingest.plist
 Toutes les 30 minutes, les prix sont relus et une ligne n'est ajoutée que si un prix a
 réellement changé. Journal dans `data/ingest.log`.
 
-## Consulter depuis le téléphone
+## En ligne
+
+👉 **https://matissepe.github.io/CARBU-TRACKER/**
+
+Site statique régénéré toutes les heures par GitHub Actions
+([`.github/workflows/publish.yml`](.github/workflows/publish.yml)) : il récupère la base,
+ingère les prix du moment, régénère les 103 pages, republie la base et déploie.
+
+La base vit entre deux exécutions comme asset de la release `data`, jamais dans git.
+Si elle disparaissait, le job la reconstruirait depuis les archives annuelles.
+
+Depuis Safari sur iPhone : **Partager → Sur l'écran d'accueil**. L'app s'ouvre alors sans
+barre d'adresse, sous le nom « Le plein ».
+
+## Consulter depuis le téléphone en dev
 
 Depuis un appareil du même réseau Wi-Fi, ouvrir `http://<ip-du-mac>:3000`
 (`ipconfig getifaddr en0` donne l'adresse).
