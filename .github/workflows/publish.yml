@@ -1,10 +1,14 @@
 name: Publier le site
 
 # Le site est du HTML statique : sa fraîcheur est celle du dernier build.
-# Un prix change tous les 1 à 2 jours, une passe par heure est donc largement suffisante.
+# Un prix change tous les 1 à 2 jours, une passe toutes les deux heures suffit largement.
+#
+# L'heure est en UTC, mais le décalage de Paris est un nombre entier d'heures : « pile » ici
+# reste « pile » à l'affichage. GitHub décale souvent les tâches planifiées de quelques minutes,
+# et d'autant plus à l'heure pile, qui est le créneau le plus chargé.
 on:
   schedule:
-    - cron: '7 * * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
   push:
     branches: [main]
@@ -36,7 +40,7 @@ jobs:
       - run: npm ci
 
       # La base vit entre deux exécutions comme asset de la release « data », pas dans
-      # l'historique git : 4 Mo réécrits toutes les heures n'ont rien à y faire.
+      # l'historique git : 4 Mo réécrits en permanence n'ont rien à y faire.
       - name: Récupérer la base
         env:
           GH_TOKEN: ${{ github.token }}

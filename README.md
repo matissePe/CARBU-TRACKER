@@ -38,7 +38,7 @@ réellement changé. Journal dans `data/ingest.log`.
 
 👉 **https://matissepe.github.io/CARBU-TRACKER/**
 
-Site statique régénéré toutes les heures par GitHub Actions
+Site statique régénéré toutes les deux heures par GitHub Actions
 ([`.github/workflows/publish.yml`](.github/workflows/publish.yml)) : il récupère la base,
 ingère les prix du moment, régénère les 103 pages, republie la base et déploie.
 

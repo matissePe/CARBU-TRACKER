@@ -44,7 +44,7 @@ Les trois pièges les plus coûteux, en résumé :
 - **Next.js 16 (App Router) + React 19 + TypeScript**. Node 24 (`.nvmrc`) — Next exige ≥ 18.18.
 - **SQLite** (`data/carbu.db`) via `better-sqlite3`, déclaré dans `serverExternalPackages`.
 - **Recharts** pour les courbes, **Tailwind CSS 4** pour le style.
-- **Le site est publié en HTML statique** sur GitHub Pages, régénéré toutes les heures par
+- **Le site est publié en HTML statique** sur GitHub Pages, régénéré toutes les deux heures par
   GitHub Actions (`.github/workflows/publish.yml`). SQLite ne tourne plus qu'à la génération :
   le site publié ne contient aucune base, seulement 103 pages.
   - La base vit entre deux exécutions comme **asset de la release `data`**, jamais dans git.
@@ -52,7 +52,7 @@ Les trois pièges les plus coûteux, en résumé :
     filet : si l'asset a disparu, le job reconstruit tout depuis les archives annuelles.
   - `scripts/launchd/` reste utilisable pour ingérer depuis le Mac, mais n'est plus nécessaire.
 - **Conséquence des pages statiques : jamais de date relative rendue côté serveur.** Un « il y a
-  13 h » figé dans du HTML régénéré toutes les heures devient faux dès la minute suivante.
+  13 h » figé dans du HTML régénéré toutes les deux heures devient faux dès la minute suivante.
   Le serveur rend donc toujours l'absolu, et `RelativeTime` (composant client) le remplace par
   le relatif après hydratation, à partir de l'heure réelle et rafraîchi chaque minute.
   Le premier rendu client doit rester identique au rendu serveur, sinon React signale un écart

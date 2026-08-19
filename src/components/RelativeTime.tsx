@@ -7,7 +7,7 @@ import { formatShortDateTime, nowInParis, toEpoch } from '@/lib/paris-time';
 /**
  * « il y a 13 h » calculé dans le navigateur, pas au build.
  *
- * Les pages sont du HTML statique régénéré toutes les heures : un libellé relatif figé dedans
+ * Les pages sont du HTML statique régénéré toutes les deux heures : un libellé relatif figé
  * serait faux dès la minute suivante, et franchement faux si un build échoue. On rend donc la
  * date absolue côté serveur — vraie indéfiniment, et lisible même sans JavaScript — puis on la
  * remplace par le libellé relatif une fois la page chargée, à partir de l'heure réelle.
