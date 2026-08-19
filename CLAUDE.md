@@ -96,6 +96,34 @@ Ce n'est pas un explorateur d'historique — la courbe justifie le conseil, elle
   Les deux mises en page peuvent diverger franchement.
 - **Aucune projection de prix.** L'app affiche une position dans la fourchette et une direction
   récente, jamais une prévision : une tendance s'inverse en trois jours.
+- **L'app ne conseille jamais d'attendre plus d'une à deux semaines.** C'est la souplesse réelle
+  d'un plein mensuel, et guetter au-delà fait perdre de l'argent (voir ci-dessous).
+
+### Ce que la simulation a montré (19/08/2026)
+
+Backtest d'un plein tous les 30 jours avec 14 jours de souplesse, moyenné sur 30 phases de départ,
+sur l'historique réel. Un signe **+** signifie qu'on paie plus cher qu'en ignorant l'app.
+
+| Règle | 2022 → 2026 | 12 derniers mois |
+|---|---|---|
+| position **30 j** < 30 % | +0,41 €/an | +6,08 €/an |
+| position **90 j** < 30 % | −2,16 €/an | +1,89 €/an |
+| position **180 j** < 30 % | −10,08 €/an | +4,25 €/an |
+| position 90 j < 50 % **ou** rebond | −1,49 €/an | −5,03 €/an |
+
+Trois conclusions, qui pilotent `src/lib/advice.ts` :
+
+1. **Ne pas raccourcir la fenêtre sous 90 jours.** Sur une baisse continue, le prix est chaque jour
+   proche de son plus bas des 30 derniers jours : la jauge donne le feu vert en permanence alors
+   qu'attendre aurait été meilleur. Une fenêtre courte efface la tendance, qui porte l'information.
+2. **Ne pas l'allonger non plus.** 180 jours est plus juste mais ne donne le feu vert que 1 % des
+   jours et reste muet jusqu'à 229 jours d'affilée — inutilisable à raison d'un plein par mois.
+3. **Acheter quand le prix est raisonnable, pas parfait.** Seule règle gagnante sur les 12 derniers
+   mois : position < 50 % **ou** creux manifestement passé.
+
+**Et surtout : la question « où » vaut trois à dix fois la question « quand ».** Aller à la moins
+chère plutôt qu'à une station quelconque vaut ~29 €/an (écart moyen mesuré de 0,048 €/L) ; le
+meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus du conseil.
 
 ### Écarté explicitement
 

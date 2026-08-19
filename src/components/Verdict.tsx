@@ -1,9 +1,8 @@
 import type { Advice } from '@/lib/advice';
 
 const TONE_DOT: Record<Advice['tone'], string> = {
-  good: 'bg-down',
-  neutral: 'bg-ink-muted',
-  bad: 'bg-up',
+  go: 'bg-down',
+  wait: 'bg-accent-bright',
 };
 
 /** La réponse à « quand y aller », avant tout le reste et sans avoir à faire défiler. */

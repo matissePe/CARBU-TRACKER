@@ -4,7 +4,30 @@ import type { HistoryPoint } from '@/lib/prices';
 /**
  * Le conseil « maintenant ou plus tard » repose sur deux faits mesurables, jamais sur une
  * prévision : où se situe le prix dans sa fourchette récente, et dans quel sens il bouge.
- * Une tendance s'inverse en trois jours — l'app le dit, elle ne l'anticipe pas.
+ *
+ * Les seuils ne sont pas choisis à l'intuition. Simulation d'un plein tous les 30 jours avec
+ * 14 jours de souplesse, moyennée sur 30 phases de départ, sur l'historique réel des 9 stations :
+ *
+ * | Règle                        | 2022 → 2026 | 12 derniers mois |
+ * |------------------------------|-------------|------------------|
+ * | position 30 j < 30 %         |  +0,41 €/an |      +6,08 €/an  |
+ * | position 90 j < 30 %         |  −2,16 €/an |      +1,89 €/an  |
+ * | position 180 j < 30 %        | −10,08 €/an |      +4,25 €/an  |
+ * | position 90 j < 50 % ou rebond | −1,49 €/an |     −5,03 €/an  |
+ *
+ * Un signe + signifie qu'on paie PLUS cher qu'en ignorant l'app. Deux enseignements :
+ *
+ * 1. Raccourcir la fenêtre est contre-productif. Pendant une baisse continue, le prix est chaque
+ *    jour proche de son plus bas des 30 derniers jours : la jauge donne le feu vert en permanence
+ *    alors qu'attendre aurait été meilleur. Plus la fenêtre est courte, plus elle efface la
+ *    tendance, qui est justement ce qui porte l'information. D'où les 90 jours.
+ * 2. Attendre le moment parfait ne paie pas. La fenêtre de 180 jours, plus juste sur le papier,
+ *    ne donne le feu vert que 1 % des jours et reste muette jusqu'à 229 jours d'affilée —
+ *    inutilisable pour quelqu'un qui fait le plein tous les mois. La seule règle gagnante achète
+ *    quand le prix est simplement RAISONNABLE, ou quand le creux est manifestement passé.
+ *
+ * Conséquence sur la formulation : l'app ne dit jamais « attends » sans horizon. Le report
+ * maximum qu'elle peut conseiller est d'une à deux semaines, la souplesse réelle d'un plein.
  */
 
 /** Fenêtre de référence pour situer le prix du jour. */
@@ -14,8 +37,10 @@ export const DIRECTION_DAYS = 14;
 
 /** En deçà de ce mouvement sur la fenêtre, on considère le prix stable. */
 const STABLE_MILLI = 10;
-const LOW_PERCENT = 30;
-const HIGH_PERCENT = 70;
+/** Sous ce seuil, le prix est franchement bas. */
+const CHEAP_PERCENT = 30;
+/** Sous ce seuil, le prix est raisonnable — c'est le seuil d'achat validé par la simulation. */
+const REASONABLE_PERCENT = 50;
 
 export type Position = {
   percent: number;
@@ -29,11 +54,12 @@ export type Position = {
 export type Direction = {
   deltaMilli: number;
   trend: 'hausse' | 'baisse' | 'stable';
-  /** Écart avec le point le plus bas de la fenêtre de position, souvent plus parlant. */
+  /** Écart avec le point le plus bas de la fenêtre de position. */
   reboundMilli: number;
 };
 
-export type Tone = 'good' | 'neutral' | 'bad';
+/** Deux issues seulement : y aller, ou décaler de quelques jours. Jamais « n'y va pas ». */
+export type Tone = 'go' | 'wait';
 
 export type Advice = {
   tone: Tone;
@@ -82,14 +108,9 @@ export function computeDirection(series: HistoryPoint[], position: Position): Di
   const deltaMilli = current - reference;
   return {
     deltaMilli,
-    trend:
-      Math.abs(deltaMilli) < STABLE_MILLI ? 'stable' : deltaMilli > 0 ? 'hausse' : 'baisse',
+    trend: Math.abs(deltaMilli) < STABLE_MILLI ? 'stable' : deltaMilli > 0 ? 'hausse' : 'baisse',
     reboundMilli: current - position.minMilli,
   };
-}
-
-function euros(milli: number): string {
-  return `${(Math.abs(milli) / 1000).toFixed(3).replace('.', ',')} €`;
 }
 
 function cents(milli: number): string {
@@ -101,71 +122,54 @@ export function buildAdvice(series: HistoryPoint[]): Advice | null {
   const position = computePosition(series);
   if (!position) return null;
   const direction = computeDirection(series, position);
+  const context = { position, direction };
 
-  const low = position.percent < LOW_PERCENT;
-  const high = position.percent > HIGH_PERCENT;
-  const rising = direction.trend === 'hausse';
-  const falling = direction.trend === 'baisse';
-
-  if (low) {
+  if (position.percent < CHEAP_PERCENT) {
     return {
-      ...base(position, direction),
-      tone: 'good',
+      ...context,
+      tone: 'go',
       tag: 'Bon moment',
-      title: rising ? 'Bon prix, mais ça repart à la hausse.' : 'C’est le moment de faire le plein.',
-      body: rising
-        ? `Le prix est encore dans le bas de sa fourchette et il a déjà repris ${cents(direction.deltaMilli)} en deux semaines. Fais le plein maintenant.`
-        : `Le prix est dans le bas de sa fourchette des ${POSITION_DAYS} derniers jours (${euros(position.minMilli)} à ${euros(position.maxMilli)}). L’occasion se prend.`,
+      title: 'Fais le plein maintenant.',
+      body: `Le prix est dans le bas de sa fourchette des ${POSITION_DAYS} derniers jours. C’est le genre d’occasion qui ne revient que quelques fois par an.`,
     };
   }
 
-  if (high && rising) {
+  if (position.percent < REASONABLE_PERCENT) {
     return {
-      ...base(position, direction),
-      tone: 'bad',
-      tag: 'Mauvais moment',
-      title: 'C’est cher, et ça monte encore.',
-      body: `Mets le minimum. Le prix a repris ${cents(direction.reboundMilli)} depuis son plus bas et rien n’indique une baisse à court terme.`,
+      ...context,
+      tone: 'go',
+      tag: 'Feu vert',
+      title: 'Prix correct, vas-y.',
+      body: `Le prix est dans la moitié basse de sa fourchette des ${POSITION_DAYS} derniers jours. Guetter mieux fait perdre plus souvent que ça ne rapporte.`,
     };
   }
 
-  if (high && falling) {
+  // Le prix est haut, mais il remonte : le creux est derrière, attendre coûte de l'argent.
+  if (direction.trend === 'hausse') {
     return {
-      ...base(position, direction),
-      tone: 'neutral',
-      tag: 'Plutôt attendre',
-      title: 'Encore cher, mais la baisse est amorcée.',
-      body: `Le prix a déjà perdu ${cents(direction.deltaMilli)} en deux semaines. Si ton réservoir peut tenir quelques jours, attends.`,
+      ...context,
+      tone: 'go',
+      tag: 'Ne traîne pas',
+      title: 'Le creux est passé, ça remonte.',
+      body: `Le prix a repris ${cents(direction.deltaMilli)} en deux semaines. Ce n’est pas un bon prix, mais attendre te coûterait plus cher que d’y aller maintenant.`,
     };
   }
 
-  if (high) {
+  if (direction.trend === 'baisse') {
     return {
-      ...base(position, direction),
-      tone: 'bad',
-      tag: 'Mauvais moment',
-      title: 'Le prix est haut et il stagne.',
-      body: `Il est à ${cents(direction.reboundMilli)} au-dessus de son plus bas des ${POSITION_DAYS} derniers jours. Mets le minimum et repasse dans une semaine.`,
+      ...context,
+      tone: 'wait',
+      tag: 'Tu peux attendre',
+      title: 'C’est cher, mais ça redescend.',
+      body: `Le prix a perdu ${cents(direction.deltaMilli)} en deux semaines. Si ton réservoir tient, repasse dans une semaine — pas plus, la tendance peut s’inverser en trois jours.`,
     };
   }
 
   return {
-    ...base(position, direction),
-    tone: 'neutral',
-    tag: rising ? 'Ne traîne pas' : 'Sans urgence',
-    title: rising
-      ? 'Prix moyen, orienté à la hausse.'
-      : falling
-        ? 'Prix moyen, orienté à la baisse.'
-        : 'Prix moyen, plutôt stable.',
-    body: rising
-      ? `Le prix a pris ${cents(direction.deltaMilli)} en deux semaines. Si ton réservoir est bas, n’attends pas la semaine prochaine.`
-      : falling
-        ? `Le prix a perdu ${cents(direction.deltaMilli)} en deux semaines. Rien ne presse.`
-        : `Le prix bouge peu depuis deux semaines. Va au moins cher, sans te presser.`,
+    ...context,
+    tone: 'wait',
+    tag: 'Sans urgence',
+    title: 'Prix haut, mais stable.',
+    body: `Il est ${cents(direction.reboundMilli)} au-dessus de son plus bas des ${POSITION_DAYS} derniers jours et ne bouge plus depuis deux semaines. Décale de quelques jours si tu peux, sans plus attendre.`,
   };
-}
-
-function base(position: Position, direction: Direction) {
-  return { position, direction };
 }

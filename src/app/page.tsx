@@ -85,17 +85,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       */}
       <div className="grid gap-px bg-hairline sm:grid-cols-[minmax(0,400px)_minmax(0,1fr)] sm:overflow-hidden sm:rounded-xl sm:border sm:border-hairline">
         <div className="grid min-w-0 content-start gap-px bg-hairline">
-          {advice ? (
-            <>
-              <Verdict advice={advice} />
-              <Gauge position={advice.position} />
-            </>
-          ) : (
-            <section className="bg-surface px-5 py-6 text-sm text-ink-muted sm:px-6">
-              Pas encore assez d&apos;historique sur {FUEL_META[fuel].label} pour donner un conseil.
-            </section>
-          )}
-
+          {/*
+            Le classement d'abord. Mesuré sur les 12 derniers mois : aller à la moins chère
+            plutôt qu'à une station quelconque vaut ~29 €/an, contre ~10 €/an au mieux pour le
+            choix du jour. La question « où » rapporte trois à dix fois la question « quand ».
+          */}
           {rows.length > 0 && focused ? (
             <RankList rows={rows} focusedId={focused.id} hrefFor={(id) => href({ station: String(id) })} />
           ) : null}
@@ -109,6 +103,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
               sur un plein.
             </p>
           ) : null}
+
+          {advice ? (
+            <>
+              <Verdict advice={advice} />
+              <Gauge position={advice.position} />
+            </>
+          ) : (
+            <section className="bg-surface px-5 py-6 text-sm text-ink-muted sm:px-6">
+              Pas encore assez d&apos;historique sur {FUEL_META[fuel].label} pour donner un conseil.
+            </section>
+          )}
         </div>
 
         <div className="grid min-w-0 content-start gap-px bg-surface">
@@ -195,11 +200,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
             </Chip>
           ))}
         </div>
-        <p className="mt-4 max-w-prose text-[13px] leading-relaxed text-ink-muted">
-          Le conseil repose sur deux faits mesurés : la position du prix dans sa fourchette des{' '}
-          {POSITION_DAYS} derniers jours, et son sens de variation sur deux semaines. Ce n&apos;est
-          pas une prévision — une tendance peut s&apos;inverser en trois jours.
-        </p>
+        <div className="mt-5 max-w-prose space-y-3 text-[13px] leading-relaxed text-ink-muted">
+          <p>
+            <span className="font-medium text-ink">Le choix de la station compte plus que celui du jour.</span>{' '}
+            Sur les 12 derniers mois, aller à la moins chère plutôt qu&apos;à une station quelconque
+            vaut environ 29 € par an. Bien choisir son jour, une dizaine d&apos;euros au mieux.
+          </p>
+          <p>
+            Le conseil repose sur deux faits mesurés : la position du prix dans sa fourchette des{' '}
+            {POSITION_DAYS} derniers jours, et son sens de variation sur deux semaines. Ce n&apos;est
+            pas une prévision — une tendance peut s&apos;inverser en trois jours. Il ne te dira jamais
+            d&apos;attendre plus d&apos;une semaine ou deux : sur ton historique, guetter le moment
+            parfait fait perdre de l&apos;argent plus souvent que ça n&apos;en fait gagner.
+          </p>
+        </div>
       </section>
     </div>
   );
