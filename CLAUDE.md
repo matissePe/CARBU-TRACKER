@@ -51,9 +51,13 @@ Les trois pièges les plus coûteux, en résumé :
   - Le backfill reste une opération locale (`.cache/` fait 411 Mo). En CI il ne sert que de
     filet : si l'asset a disparu, le job reconstruit tout depuis les archives annuelles.
   - `scripts/launchd/` reste utilisable pour ingérer depuis le Mac, mais n'est plus nécessaire.
-- **Conséquence des pages statiques : jamais de date relative dans l'interface.** Un « il y a
-  13 h » figé dans du HTML devient faux dès la minute suivante. Toutes les dates sont absolues,
-  et le pied de page indique l'heure de génération.
+- **Conséquence des pages statiques : jamais de date relative rendue côté serveur.** Un « il y a
+  13 h » figé dans du HTML régénéré toutes les heures devient faux dès la minute suivante.
+  Le serveur rend donc toujours l'absolu, et `RelativeTime` (composant client) le remplace par
+  le relatif après hydratation, à partir de l'heure réelle et rafraîchi chaque minute.
+  Le premier rendu client doit rester identique au rendu serveur, sinon React signale un écart
+  d'hydratation — d'où le passage au relatif dans un `useEffect` et non à la volée.
+  Corollaire : ne jamais calculer d'âge au build. `ranking()` ne renvoie plus `ageHours`.
 - `tsx` pour exécuter les scripts TypeScript sans étape de build.
 
 ### Carte du code

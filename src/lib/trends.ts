@@ -1,4 +1,4 @@
-import { nowInParis, parisDaysAgo, toEpoch } from '@/lib/paris-time';
+import { parisDaysAgo, toEpoch } from '@/lib/paris-time';
 import { perTank } from '@/config/vehicle';
 import { distributingStations, history, latestPrice, priceAt, type HistoryPoint } from '@/lib/prices';
 import type { Fuel } from '@/lib/fuels';
@@ -84,11 +84,13 @@ export type RankedStation = {
   extraPerTank: number;
   /** Position du prix entre le moins cher et le plus cher, pour la barre de comparaison. */
   barPercent: number;
-  /** Âge du relevé en heures — un prix de six jours mérite un avertissement. */
-  ageHours: number;
 };
 
-/** Au-delà de ce délai, le prix affiché n'est plus une information fiable pour se déplacer. */
+/**
+ * Au-delà de ce délai, le prix affiché n'est plus une information fiable pour se déplacer.
+ * L'âge n'est jamais calculé ici : les pages sont statiques, il le serait au build. C'est
+ * `RelativeTime` qui le calcule dans le navigateur, à partir de l'heure réelle.
+ */
 export const STALE_HOURS = 48;
 
 /**
@@ -97,8 +99,6 @@ export const STALE_HOURS = 48;
  * un calcul mental.
  */
 export function ranking(fuel: Fuel): RankedStation[] {
-  const now = toEpoch(nowInParis());
-
   // Sans ce filtre, une station qui a cessé de vendre le GPLc en 2011 réapparaît dans le
   // classement avec son prix de l'époque.
   const distributing = distributingStations(fuel);
@@ -119,7 +119,6 @@ export function ranking(fuel: Fuel): RankedStation[] {
     ...row,
     extraPerTank: perTank(row.priceMilli - cheapest),
     barPercent: span === 0 ? 100 : Math.round(((row.priceMilli - cheapest) / span) * 88) + 12,
-    ageHours: (now - toEpoch(row.recordedAt)) / 3_600_000,
   }));
 }
 

@@ -2,18 +2,9 @@ import Link from 'next/link';
 
 import { TANK_LITERS } from '@/config/vehicle';
 import { stationName, stationSubtitle } from '@/config/stations';
+import RelativeTime from '@/components/RelativeTime';
 import { formatPrice } from '@/lib/fuels';
-import { formatShortDateTime, toEpoch } from '@/lib/paris-time';
 import { STALE_HOURS, type RankedStation } from '@/lib/trends';
-
-/**
- * Date absolue et non relative : la page est du HTML statique régénéré toutes les heures,
- * un « il y a 13 h » figé dedans devient faux dès la minute suivante — et franchement faux si
- * un build échoue. « 19/08 à 10:13 » reste vrai indéfiniment.
- */
-function seenAt(recordedAt: string): string {
-  return formatShortDateTime(toEpoch(recordedAt));
-}
 
 type Props = {
   rows: RankedStation[];
@@ -34,7 +25,6 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
       <ul>
         {rows.map((row, index) => {
           const best = index === 0;
-          const stale = row.ageHours > STALE_HOURS;
           return (
             <li key={row.station.id} className="border-t border-hairline first:border-t-0">
               <Link
@@ -56,8 +46,9 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
                 </div>
 
                 <div className="mt-0.5 flex items-baseline justify-between gap-3 font-mono text-[11px] text-ink-muted">
-                  <span className={`min-w-0 truncate ${stale ? 'text-up' : ''}`}>
-                    {stationSubtitle(row.station)} · {seenAt(row.recordedAt)}
+                  <span className="min-w-0 truncate">
+                    {stationSubtitle(row.station)} ·{' '}
+                    <RelativeTime recordedAt={row.recordedAt} staleAfterHours={STALE_HOURS} />
                   </span>
                   <span className="shrink-0 whitespace-nowrap">
                     {best ? '—' : `+${row.extraPerTank.toFixed(2).replace('.', ',')} €`}
