@@ -1,19 +1,26 @@
 import type { NextConfig } from 'next';
 
+/*
+ * Le site est publié en HTML statique sur GitHub Pages, sous un chemin de projet
+ * (matissepe.github.io/CARBU-TRACKER). En local le chemin racine reste `/`, d'où la variable.
+ */
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 const nextConfig: NextConfig = {
-  // better-sqlite3 est un module natif : il doit rester en require() côté serveur
-  // au lieu d'être passé au bundler.
+  output: 'export',
+  basePath,
+  // GitHub Pages sert des répertoires : un chemin doit donc correspondre à un index.html,
+  // sinon /gazole/56000005/90 renvoie 404.
+  trailingSlash: true,
+
+  // better-sqlite3 est un module natif. Il n'est plus utilisé qu'à la génération — le site
+  // publié ne contient aucune base de données, seulement du HTML.
   serverExternalPackages: ['better-sqlite3'],
 
   /*
-   * Sans ça, consulter l'app depuis le téléphone est cassé — et de façon trompeuse.
-   *
    * En mode dev, Next 16 refuse de servir les fichiers /_next/ à une requête dont l'origine
-   * n'est pas localhost : ouvrir http://192.168.x.x:3000 sur un mobile renvoie le HTML (200)
-   * mais des 403 sur tous les chunks. La page s'affiche donc entièrement, puisqu'elle est
-   * rendue côté serveur, sauf les composants clients — c'est-à-dire, ici, le seul graphique.
-   *
-   * On autorise le réseau local privé. Le mode production (`npm run start`) n'est pas concerné.
+   * n'est pas localhost : ouvrir http://192.168.x.x:3000 sur un mobile renvoie le HTML mais
+   * des 403 sur tous les chunks, et seuls les composants clients disparaissent.
    */
   allowedDevOrigins: ['192.168.1.*', '192.168.0.*', '10.0.0.*', '*.local'],
 };

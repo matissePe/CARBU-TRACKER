@@ -3,13 +3,16 @@ import Link from 'next/link';
 import { TANK_LITERS } from '@/config/vehicle';
 import { stationName, stationSubtitle } from '@/config/stations';
 import { formatPrice } from '@/lib/fuels';
+import { formatShortDateTime, toEpoch } from '@/lib/paris-time';
 import { STALE_HOURS, type RankedStation } from '@/lib/trends';
 
-function freshness(ageHours: number): string {
-  if (ageHours < 1) return "à l'instant";
-  if (ageHours < 24) return `il y a ${Math.round(ageHours)} h`;
-  const days = Math.round(ageHours / 24);
-  return days === 1 ? 'hier' : `il y a ${days} jours`;
+/**
+ * Date absolue et non relative : la page est du HTML statique régénéré toutes les heures,
+ * un « il y a 13 h » figé dedans devient faux dès la minute suivante — et franchement faux si
+ * un build échoue. « 19/08 à 10:13 » reste vrai indéfiniment.
+ */
+function seenAt(recordedAt: string): string {
+  return formatShortDateTime(toEpoch(recordedAt));
 }
 
 type Props = {
@@ -54,7 +57,7 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
 
                 <div className="mt-0.5 flex items-baseline justify-between gap-3 font-mono text-[11px] text-ink-muted">
                   <span className={`min-w-0 truncate ${stale ? 'text-up' : ''}`}>
-                    {stationSubtitle(row.station)} · {freshness(row.ageHours)}
+                    {stationSubtitle(row.station)} · {seenAt(row.recordedAt)}
                   </span>
                   <span className="shrink-0 whitespace-nowrap">
                     {best ? '—' : `+${row.extraPerTank.toFixed(2).replace('.', ',')} €`}

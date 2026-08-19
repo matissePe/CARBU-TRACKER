@@ -82,3 +82,16 @@ export function formatAxisDate(epochMs: number, spanDays: number): string {
 export function formatDateTime(epochMs: number): string {
   return DATETIME_LABEL.format(new Date(epochMs));
 }
+
+const SHORT_DATETIME = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'UTC',
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** « 19/08 à 10:13 » — compact, et vrai indéfiniment contrairement à un « il y a 13 h ». */
+export function formatShortDateTime(epochMs: number): string {
+  return SHORT_DATETIME.format(new Date(epochMs)).replace(' ', ' à ');
+}

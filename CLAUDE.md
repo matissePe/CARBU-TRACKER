@@ -42,8 +42,16 @@ Les trois pièges les plus coûteux, en résumé :
 - **Next.js 16 (App Router) + React 19 + TypeScript**. Node 24 (`.nvmrc`) — Next exige ≥ 18.18.
 - **SQLite** (`data/carbu.db`) via `better-sqlite3`, déclaré dans `serverExternalPackages`.
 - **Recharts** pour les courbes, **Tailwind CSS 4** pour le style.
-- **Tout tourne en local sur le Mac** : pas de déploiement, pas de base distante.
-  L'ingestion est planifiée par launchd (`scripts/launchd/`), toutes les 30 minutes.
+- **Le site est publié en HTML statique** sur GitHub Pages, régénéré toutes les heures par
+  GitHub Actions (`.github/workflows/publish.yml`). SQLite ne tourne plus qu'à la génération :
+  le site publié ne contient aucune base, seulement 103 pages.
+  - La base vit entre deux exécutions comme **asset de la release `data`**, jamais dans git.
+  - Le backfill reste une opération locale (`.cache/` fait 411 Mo). En CI il ne sert que de
+    filet : si l'asset a disparu, le job reconstruit tout depuis les archives annuelles.
+  - `scripts/launchd/` reste utilisable pour ingérer depuis le Mac, mais n'est plus nécessaire.
+- **Conséquence des pages statiques : jamais de date relative dans l'interface.** Un « il y a
+  13 h » figé dans du HTML devient faux dès la minute suivante. Toutes les dates sont absolues,
+  et le pied de page indique l'heure de génération.
 - `tsx` pour exécuter les scripts TypeScript sans étape de build.
 
 ### Carte du code
@@ -125,7 +133,14 @@ Trois conclusions, qui pilotent `src/lib/advice.ts` :
 chère plutôt qu'à une station quelconque vaut ~29 €/an (écart moyen mesuré de 0,048 €/L) ; le
 meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus du conseil.
 
-### Consulter depuis le téléphone
+### Ajouter à l'écran d'accueil
+
+`src/app/manifest.ts` et les métadonnées `appleWebApp` de `layout.tsx` font que « Sur l'écran
+d'accueil » depuis Safari installe l'app sans barre d'adresse, avec son icône. iOS ignore le
+manifeste pour l'icône : il lui faut le lien `apple-touch-icon` (180×180, opaque).
+Les icônes sont générées depuis `public/icon.svg`.
+
+### Consulter depuis le téléphone en dev
 
 `allowedDevOrigins` doit rester renseigné dans `next.config.ts`. En mode dev, Next 16 refuse de
 servir les fichiers `/_next/` à une requête venant d'une autre origine que localhost : ouvrir
