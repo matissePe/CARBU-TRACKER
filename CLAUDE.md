@@ -5,9 +5,9 @@ l'évolution des prix des carburants dans les stations-service de **Vannes** et 
 
 ## Objectif fonctionnel
 
-1. Lister toutes les stations-service de Vannes (INSEE 56260, CP 56000) et Séné (INSEE 56243, CP 56860).
+1. Lister les stations-service de Vannes et Séné (8 actives recensées, cf. docs/STATIONS.md).
 2. Permettre de sélectionner une (ou plusieurs) station(s).
-3. Permettre de sélectionner un carburant (Gazole, SP95, SP95-E10, SP98, E85, GPLc).
+3. Permettre de sélectionner un carburant (Gazole, SP95, E10, SP98, E85, GPLc — ids 1 à 6 à la source).
 4. Afficher l'**historique des prix sous forme de courbe** + les **tendances**
    (variation sur 7/30/90 jours, min/max, moyenne, station la moins chère du moment).
 
@@ -15,13 +15,25 @@ Tout le reste est hors périmètre tant que ce n'est pas explicitement demandé.
 
 ## Source de données
 
-Données publiques françaises sur les prix des carburants.
-👉 **Détails, URL exacte et schéma : [docs/DATA-SOURCE.md](docs/DATA-SOURCE.md)** — à compléter/valider
-avant d'écrire le moindre parseur. Ne pas deviner le format : le vérifier sur la vraie réponse.
+Deux sources publiques complémentaires, sous Licence Ouverte v2.0, sans authentification.
+👉 **Tout est documenté et vérifié dans [docs/DATA-SOURCE.md](docs/DATA-SOURCE.md)** — le lire avant
+d'écrire la moindre ligne d'ingestion. Il contient 7 pièges vérifiés sur les vraies données ;
+ne pas les redécouvrir à la main.
 
-Contrainte structurante : la source publique expose surtout un **instantané** des prix.
-L'historique long terme est donc **construit et stocké par nous** via une ingestion régulière.
-=> La base locale est la source de vérité de l'historique ; ne jamais la réinitialiser sans demander.
+1. **Flux instantané** (Opendatasoft Explore v2.1, `data.economie.gouv.fr`) — prix actuels,
+   rafraîchi toutes les 15 min, filtrable côté serveur. Sert à prolonger la courbe au fil de l'eau.
+2. **Archives annuelles** (`donnees.roulez-eco.fr/opendata/annee/YYYY`) — **tout l'historique des
+   changements de prix depuis 2007**. Sert au backfill initial.
+
+Les deux sources partagent les mêmes `id` de station, les mêmes horodatages `maj` et les mêmes valeurs,
+donc la clé `(station_id, fuel, maj)` déduplique naturellement entre backfill et flux.
+
+Les trois pièges les plus coûteux, en résumé :
+
+- Les horodatages sont en **heure murale `Europe/Paris`** malgré le suffixe `+00:00` de l'API. Ne jamais convertir de fuseau.
+- Le champ `ville` a une casse incohérente et le CP 56000 déborde sur Ploeren → le périmètre est une
+  **liste explicite d'ids de stations** ([docs/STATIONS.md](docs/STATIONS.md)), pas un filtre géographique.
+- Les données **ne contiennent ni nom ni enseigne** de station : c'est exclu à la source. Correspondance manuelle.
 
 ## Stack (hypothèse initiale, à confirmer)
 
@@ -33,19 +45,22 @@ L'historique long terme est donc **construit et stocké par nous** via une inges
 
 ## Modèle de données (cible)
 
-- `stations` : id (id national de la station), nom/enseigne, adresse, ville, cp, lat, lon.
-- `prices` : station_id, fuel (enum), price (centimes en entier, jamais de float pour l'argent), recorded_at (UTC ISO).
-  - Contrainte d'unicité `(station_id, fuel, recorded_at)` pour rendre l'ingestion **idempotente**.
-  - On n'insère un point que si le prix a changé depuis le dernier relevé (stockage en escalier),
-    et l'affichage interpole en marches d'escalier (`stepAfter`), pas en ligne droite.
+- `stations` : id (id national, entier, stable entre les deux sources), adresse, ville, cp, lat, lon,
+  enseigne (saisie manuellement), active.
+- `prices` : station_id, fuel (`gazole|sp95|sp98|e10|e85|gplc`), price_milli (entier, millièmes d'euro),
+  recorded_at (chaîne naïve ISO en heure de Paris, telle que fournie par la source).
+  - Clé unique `(station_id, fuel, recorded_at)` → ingestion **idempotente**, backfill et flux
+    peuvent se recouvrir sans dégât.
+- Chaque ligne est un **changement de prix**, pas un relevé périodique. La courbe se trace donc en
+  escalier (`stepAfter`), et le prix « du jour J » est le dernier point antérieur à J.
 
 ## Règles de travail
 
 - **Langue** : réponses et commentaires de commit en français ; code, noms de variables et de fichiers en anglais.
-- **Périmètre géographique** : filtrer Vannes + Séné à l'ingestion, pas à l'affichage.
-  Les deux communes sont configurées dans un seul endroit (`src/config/cities.ts`), pas en dur dans le code.
-- **Prix** : stockés en **entiers (millièmes d'euro)** pour éviter les erreurs de flottants. Formatage à l'affichage seulement.
-- **Dates** : stockage en UTC ISO-8601, affichage en `Europe/Paris`.
+- **Périmètre** : filtrer à l'ingestion, pas à l'affichage.
+  Le périmètre est une liste explicite d’ids de stations dans `src/config/stations.ts`, pas un filtre sur la commune ni sur le code postal.
+- **Prix** : stockés en **entiers (millièmes d’euro)** — la source donne 3 décimales (`2.179` → `2179`). Jamais de flottant.
+- **Dates** : la source publie de l’heure murale `Europe/Paris` (mal étiquetée `+00:00` par l’API). On la stocke telle quelle, sans conversion de fuseau. Voir le piège n°1 dans docs/DATA-SOURCE.md.
 - **Pas de sur-ingénierie** : projet perso, un seul utilisateur. Pas d'auth, pas de queue, pas de Docker,
   pas de microservices, pas d'abstraction "au cas où".
 - **Réseau** : toujours mettre en cache les réponses de l'API publique en local pendant le dev
@@ -64,17 +79,19 @@ _(à créer avec le projet — mettre à jour cette section dès que le `package
 | `npm run dev` | serveur de dev |
 | `npm run build` | build de production |
 | `npm run ingest` | récupère les prix du jour et les insère en base |
-| `npm run backfill` | importe l'historique annuel disponible dans la source publique |
+| `npm run backfill` | importe les archives annuelles 2007→année courante |
 | `npm run lint` / `npm run typecheck` | qualité |
 
 ## État d'avancement
 
 - [x] Init du dépôt et de la documentation
-- [ ] Valider la source de données et son schéma (`docs/DATA-SOURCE.md`)
+- [x] Valider la source de données et son schéma ([docs/DATA-SOURCE.md](docs/DATA-SOURCE.md))
+- [x] Recenser les stations de Vannes et Séné ([docs/STATIONS.md](docs/STATIONS.md))
+- [ ] Trancher le cas de la station 56000008 (Ploeren ?) et renseigner les enseignes
 - [ ] Scaffolding Next.js + TypeScript
 - [ ] Schéma SQLite + migration initiale
-- [ ] Script d'ingestion idempotent
-- [ ] Backfill de l'historique
+- [ ] Backfill depuis les archives annuelles 2007→2026 (parsing XML en streaming)
+- [ ] Script d'ingestion idempotent depuis le flux instantané
 - [ ] UI : sélection station + carburant
-- [ ] UI : courbe d'historique
+- [ ] UI : courbe d'historique (stepAfter)
 - [ ] UI : indicateurs de tendance
