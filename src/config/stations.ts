@@ -43,9 +43,13 @@ export function stationName(station: Station): string {
 /**
  * Sous-titre qui lève l'ambiguïté : deux Carrefour et trois TotalEnergies dans le périmètre,
  * donc l'adresse reste indispensable — mais en second.
+ *
+ * La commune n'est rappelée que pour Séné : Vannes est le cas majoritaire et l'écrire neuf fois
+ * allongeait la ligne jusqu'à la faire tronquer, en masquant la fraîcheur du prix qui, elle,
+ * compte pour décider.
  */
 export function stationSubtitle(station: Station): string {
-  return station.brand ? `${station.address}, ${station.city}` : station.city;
+  return station.city === 'Vannes' ? station.address : `${station.address}, ${station.city}`;
 }
 
 /** Libellé sur une seule ligne, pour les endroits où il n'y a pas de place pour deux. */

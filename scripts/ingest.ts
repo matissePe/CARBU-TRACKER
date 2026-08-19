@@ -13,8 +13,8 @@
 
 import { STATION_IDS } from '@/config/stations';
 import { FUELS, toMilli, type Fuel } from '@/lib/fuels';
-import { stripFakeOffset } from '@/lib/paris-time';
-import { insertPrices, type PricePoint } from '@/lib/prices';
+import { nowInParis, stripFakeOffset } from '@/lib/paris-time';
+import { insertPrices, markAvailable, type PricePoint } from '@/lib/prices';
 import { logIngest } from '@/lib/db';
 
 const ENDPOINT =
@@ -70,6 +70,13 @@ async function main(): Promise<void> {
 
   const points = records.flatMap(toPoints);
   const inserted = insertPrices(points);
+
+  // Photo de ce qui est réellement à la pompe en ce moment : c'est elle qui empêche une station
+  // ayant cessé de vendre un carburant de rester dans le classement avec son prix d'il y a 15 ans.
+  markAvailable(
+    points.map((point) => ({ stationId: point.stationId, fuel: point.fuel })),
+    nowInParis(),
+  );
 
   console.log(
     `${records.length} stations, ${points.length} prix affichés, ${inserted} changements enregistrés.`,

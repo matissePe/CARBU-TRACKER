@@ -9,9 +9,9 @@ export default function Chip({ href, active, children, title }: Props) {
       title={title}
       aria-current={active ? 'true' : undefined}
       className={[
-        'rounded-full border px-3 py-1.5 text-sm transition-colors',
+        'shrink-0 rounded-full border px-3 py-1.5 text-[13px] transition-colors',
         active
-          ? 'border-transparent bg-ink text-page font-medium'
+          ? 'border-transparent bg-ink font-medium text-page'
           : 'border-hairline bg-surface text-ink-soft hover:text-ink',
       ].join(' ')}
     >

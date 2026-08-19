@@ -3,8 +3,12 @@
 Suivi personnel de l'évolution des prix des carburants dans les stations-service de
 **Vannes** et **Séné** (Morbihan).
 
-Sélectionner une station et un carburant, voir la courbe historique et les tendances.
-Historique complet **depuis 2007**, prolongé automatiquement par le flux instantané.
+L'app répond à deux questions : **où c'est le moins cher** et **quand y aller**.
+Gazole par défaut, écarts exprimés en euros sur un plein, historique complet **depuis 2007**
+prolongé automatiquement par le flux instantané.
+
+Le conseil repose sur deux faits mesurés — la position du prix dans sa fourchette des 90 derniers
+jours et son sens de variation sur deux semaines. Ce n'est jamais une prévision.
 
 ## Démarrage
 

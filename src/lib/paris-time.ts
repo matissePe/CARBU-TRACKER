@@ -71,6 +71,14 @@ export function formatDate(epochMs: number): string {
   return DATE_LABEL.format(new Date(epochMs));
 }
 
+const DATE_SHORT = new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', day: 'numeric', month: 'short' });
+const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', month: 'short', year: '2-digit' });
+
+/** Graduations d'axe : « 13 juin » sur quelques mois, « juin 24 » sur plusieurs années. */
+export function formatAxisDate(epochMs: number, spanDays: number): string {
+  return spanDays > 550 ? MONTH_YEAR.format(new Date(epochMs)) : DATE_SHORT.format(new Date(epochMs));
+}
+
 export function formatDateTime(epochMs: number): string {
   return DATETIME_LABEL.format(new Date(epochMs));
 }

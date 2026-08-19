@@ -1,5 +1,6 @@
-import { parisDaysAgo, toEpoch } from '@/lib/paris-time';
-import { history, latestPrice, priceAt, type HistoryPoint } from '@/lib/prices';
+import { nowInParis, parisDaysAgo, toEpoch } from '@/lib/paris-time';
+import { perTank } from '@/config/vehicle';
+import { distributingStations, history, latestPrice, priceAt, type HistoryPoint } from '@/lib/prices';
 import type { Fuel } from '@/lib/fuels';
 import { STATIONS, type Station } from '@/config/stations';
 
@@ -75,16 +76,51 @@ function timeWeightedAverage(points: HistoryPoint[]): number | null {
   return totalMs > 0 ? Math.round(weighted / totalMs) : points[points.length - 1].priceMilli;
 }
 
-export type Cheapest = { station: Station; priceMilli: number; recordedAt: string };
+export type RankedStation = {
+  station: Station;
+  priceMilli: number;
+  recordedAt: string;
+  /** Surcoût par rapport à la station la moins chère, en euros sur un plein. */
+  extraPerTank: number;
+  /** Position du prix entre le moins cher et le plus cher, pour la barre de comparaison. */
+  barPercent: number;
+  /** Âge du relevé en heures — un prix de six jours mérite un avertissement. */
+  ageHours: number;
+};
 
-/** Station la moins chère du moment pour un carburant, parmi celles qui le distribuent. */
-export function cheapestNow(fuel: Fuel): Cheapest[] {
-  const rows: Cheapest[] = [];
-  for (const station of STATIONS) {
+/** Au-delà de ce délai, le prix affiché n'est plus une information fiable pour se déplacer. */
+export const STALE_HOURS = 48;
+
+/**
+ * Classement des stations pour un carburant, de la moins chère à la plus chère.
+ * L'écart est exprimé en euros sur un plein : « +4,05 € » décide, « +0,081 €/L » demande
+ * un calcul mental.
+ */
+export function ranking(fuel: Fuel): RankedStation[] {
+  const now = toEpoch(nowInParis());
+
+  // Sans ce filtre, une station qui a cessé de vendre le GPLc en 2011 réapparaît dans le
+  // classement avec son prix de l'époque.
+  const distributing = distributingStations(fuel);
+
+  const rows = STATIONS.flatMap((station) => {
+    if (distributing && !distributing.has(station.id)) return [];
     const latest = latestPrice(station.id, fuel);
-    if (latest) rows.push({ station, ...latest });
-  }
-  return rows.sort((a, b) => a.priceMilli - b.priceMilli);
+    return latest ? [{ station, ...latest }] : [];
+  }).sort((a, b) => a.priceMilli - b.priceMilli);
+
+  if (rows.length === 0) return [];
+
+  const cheapest = rows[0].priceMilli;
+  const dearest = rows[rows.length - 1].priceMilli;
+  const span = dearest - cheapest;
+
+  return rows.map((row) => ({
+    ...row,
+    extraPerTank: perTank(row.priceMilli - cheapest),
+    barPercent: span === 0 ? 100 : Math.round(((row.priceMilli - cheapest) / span) * 88) + 12,
+    ageHours: (now - toEpoch(row.recordedAt)) / 3_600_000,
+  }));
 }
 
 export function loadHistory(stationId: number, fuel: Fuel, days: number | null): HistoryPoint[] {

@@ -53,9 +53,11 @@ Les trois pièges les plus coûteux, en résumé :
 | `src/config/stations.ts` | périmètre : les 9 ids suivis, et l'enseigne saisie à la main |
 | `src/lib/fuels.ts` | carburants, mapping vers la source, conversion des prix en millièmes |
 | `src/lib/db.ts` | connexion SQLite, schéma, synchro des stations |
-| `src/lib/prices.ts` | écriture idempotente, lecture de l'historique, filtrage des pics aberrants |
+| `src/lib/prices.ts` | écriture idempotente, historique, série du meilleur prix, filtrage des pics |
+| `src/lib/advice.ts` | position dans la fourchette 90 j, sens de variation 14 j, formulation du conseil |
 | `src/lib/paris-time.ts` | manipulation des horodatages naïfs en heure de Paris |
-| `src/lib/trends.ts` | variations 7/30/90 j, min/max, moyenne pondérée, classement |
+| `src/lib/trends.ts` | variations 7/30/90 j, min/max, moyenne pondérée, classement des stations |
+| `src/config/vehicle.ts` | réservoir de référence, conversion d'un écart de prix en euros par plein |
 | `scripts/backfill.ts` | archives annuelles → base (streaming, ISO-8859-1) |
 | `scripts/ingest.ts` | flux instantané → base |
 
@@ -65,6 +67,9 @@ Les trois pièges les plus coûteux, en résumé :
   enseigne (saisie manuellement), active.
 - `prices` : station_id, fuel (`gazole|sp95|sp98|e10|e85|gplc`), price_milli (entier, millièmes d'euro),
   recorded_at (chaîne naïve ISO en heure de Paris, telle que fournie par la source).
+- `station_fuels` : ce que chaque station distribue **aujourd'hui**, réécrit à chaque ingestion.
+  Sans cette table, une station qui a cessé de vendre le GPLc en 2011 réapparaît dans le classement
+  avec son prix de l'époque — `prices` est un historique, pas un état courant.
   - Clé unique `(station_id, fuel, recorded_at)` → ingestion **idempotente**, backfill et flux
     peuvent se recouvrir sans dégât.
 - Chaque ligne est un **changement de prix**, pas un relevé périodique : ~200 par an et par carburant,
@@ -144,4 +149,6 @@ Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop
 - [ ] **Renseigner les enseignes des 9 stations dans `src/config/stations.ts`** (seul point bloquant
       pour la lisibilité : sans elles, l'UI n'affiche que des adresses)
 - [ ] Installer l'agent launchd d'ingestion (cf. `scripts/launchd/`)
-- [ ] Éventuellement : comparer plusieurs stations sur une même courbe
+- [x] Refonte autour des deux questions : conseil, jauge de position, classement, mobile d'abord
+- [ ] Alerte quand le prix descend dans le quart bas de sa fourchette 90 jours
+- [ ] Rétrospective « combien j'aurais économisé » sur 12 mois

@@ -1,24 +1,20 @@
 'use client';
 
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
-import { formatDate, formatDateTime } from '@/lib/paris-time';
+import { formatAxisDate, formatDateTime } from '@/lib/paris-time';
 
 export type ChartPoint = { t: number; price: number };
 
-type Props = {
-  points: ChartPoint[];
-  /** Sert au libellé du tooltip et à l'accessibilité : la série unique n'a pas de légende. */
-  seriesLabel: string;
-};
+type Props = { points: ChartPoint[]; seriesLabel: string };
 
 /**
  * Chaque point est un CHANGEMENT de prix, pas un relevé périodique : le prix reste en vigueur
@@ -28,7 +24,7 @@ type Props = {
 export default function PriceChart({ points, seriesLabel }: Props) {
   if (points.length === 0) {
     return (
-      <div className="flex h-80 items-center justify-center text-sm text-ink-muted">
+      <div className="flex h-56 items-center justify-center text-sm text-ink-muted">
         Aucun relevé sur cette période.
       </div>
     );
@@ -36,36 +32,44 @@ export default function PriceChart({ points, seriesLabel }: Props) {
 
   const prices = points.map((point) => point.price);
   const { domain, ticks } = axisScale(Math.min(...prices), Math.max(...prices));
+  const spanDays = (points[points.length - 1].t - points[0].t) / 86_400_000;
 
   return (
-    <div className="h-80 w-full sm:h-96">
+    <div className="h-56 w-full sm:h-72 lg:h-96">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
-          <CartesianGrid stroke="var(--grid)" strokeWidth={1} vertical={false} />
+        <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id="priceFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--accent-bright)" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="var(--accent-bright)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid stroke="var(--line)" strokeWidth={1} vertical={false} />
           <XAxis
             dataKey="t"
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
-            tickFormatter={formatDate}
-            stroke="var(--axis)"
-            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+            tickFormatter={(value: number) => formatAxisDate(value, spanDays)}
+            stroke="var(--line-strong)"
+            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
             tickLine={false}
-            minTickGap={48}
+            minTickGap={44}
           />
           <YAxis
             domain={domain}
             ticks={ticks}
             tickFormatter={(value: number) => value.toFixed(2)}
-            stroke="var(--axis)"
-            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+            stroke="var(--line-strong)"
+            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            width={52}
-            unit=" €"
+            width={44}
+            orientation="right"
           />
           <Tooltip
-            cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }}
+            cursor={{ stroke: 'var(--line-strong)', strokeWidth: 1 }}
             content={({ active, payload }) => (
               <PriceTooltip
                 active={Boolean(active)}
@@ -74,18 +78,19 @@ export default function PriceChart({ points, seriesLabel }: Props) {
               />
             )}
           />
-          <Line
+          <Area
             type="stepAfter"
             dataKey="price"
-            stroke="var(--series-1)"
+            stroke="var(--accent-bright)"
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
+            fill="url(#priceFade)"
             dot={false}
             activeDot={{ r: 4, stroke: 'var(--surface)', strokeWidth: 2 }}
             isAnimationActive={false}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
@@ -97,14 +102,12 @@ export default function PriceChart({ points, seriesLabel }: Props) {
  */
 function axisScale(min: number, max: number): { domain: [number, number]; ticks: number[] } {
   const span = Math.max(max - min, 0.05);
-  const rawStep = span / 5;
   const step =
-    [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1].find((candidate) => candidate >= rawStep) ?? 1;
-
-  const low = Math.floor(min / step) * step;
-  const high = Math.ceil(max / step) * step;
+    [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1].find((candidate) => candidate >= span / 4) ?? 1;
 
   const ticks: number[] = [];
+  const low = Math.floor(min / step) * step;
+  const high = Math.ceil(max / step) * step;
   for (let value = low; value <= high + step / 2; value += step) {
     ticks.push(Number(value.toFixed(3)));
   }
@@ -123,13 +126,13 @@ function PriceTooltip({
   if (!active || !point) return null;
 
   return (
-    <div className="rounded-md border border-hairline bg-surface px-3 py-2 text-sm shadow-sm">
-      <div className="text-ink-muted">{formatDateTime(point.t)}</div>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-series-1" aria-hidden />
+    <div className="rounded-md border border-hairline bg-surface px-3 py-2 shadow-sm">
+      <div className="font-mono text-[11px] text-ink-muted">{formatDateTime(point.t)}</div>
+      <div className="mt-1 flex items-center gap-2 text-sm">
+        <span className="h-2 w-2 rounded-full bg-accent-bright" aria-hidden />
         <span className="text-ink-soft">{seriesLabel}</span>
-        <span className="ml-auto font-semibold tabular-nums text-ink">
-          {point.price.toFixed(3)} €
+        <span className="ml-auto font-mono font-semibold tabular-nums">
+          {point.price.toFixed(3).replace('.', ',')} €
         </span>
       </div>
     </div>

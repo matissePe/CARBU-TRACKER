@@ -60,5 +60,5 @@ export function toMilli(rawPrice: string | number): number | null {
 }
 
 export function formatPrice(priceMilli: number): string {
-  return `${(priceMilli / 1000).toFixed(3)} €`;
+  return `${(priceMilli / 1000).toFixed(3).replace('.', ',')} €`;
 }

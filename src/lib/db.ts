@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS prices (
   PRIMARY KEY (station_id, fuel, recorded_at)
 ) WITHOUT ROWID;
 
+-- Carburants réellement distribués aujourd'hui par chaque station.
+--
+-- Indispensable au classement : la table prices garde l'historique complet, donc le dernier prix
+-- connu d'une station peut dater de 2011 si elle a cessé de vendre le GPLc entre-temps. Le flux
+-- instantané, lui, dit explicitement ce qui est à la pompe (colonne à null sinon), et c'est ce
+-- signal qu'on enregistre ici à chaque ingestion.
+CREATE TABLE IF NOT EXISTS station_fuels (
+  station_id  INTEGER NOT NULL REFERENCES stations(id),
+  fuel        TEXT    NOT NULL,
+  last_seen   TEXT    NOT NULL,
+  PRIMARY KEY (station_id, fuel)
+) WITHOUT ROWID;
+
 -- Trace des imports, pour savoir quelles années ont déjà été backfillées.
 CREATE TABLE IF NOT EXISTS ingest_log (
   source      TEXT NOT NULL,
