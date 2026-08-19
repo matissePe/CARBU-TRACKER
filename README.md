@@ -34,6 +34,13 @@ launchctl load ~/Library/LaunchAgents/fr.carbu-tracker.ingest.plist
 Toutes les 30 minutes, les prix sont relus et une ligne n'est ajoutée que si un prix a
 réellement changé. Journal dans `data/ingest.log`.
 
+## Consulter depuis le téléphone
+
+Le serveur écoute sur toutes les interfaces : depuis un appareil du même réseau Wi-Fi,
+ouvrir `http://<ip-du-mac>:3000` (`ipconfig getifaddr en0` donne l'adresse).
+La page entière, graphique compris, est rendue côté serveur — elle s'affiche même si
+le JavaScript ne s'exécute pas.
+
 ## Documentation
 
 - [CLAUDE.md](CLAUDE.md) — contexte, règles, carte du code, avancement

@@ -41,7 +41,8 @@ Les trois pièges les plus coûteux, en résumé :
 
 - **Next.js 16 (App Router) + React 19 + TypeScript**. Node 24 (`.nvmrc`) — Next exige ≥ 18.18.
 - **SQLite** (`data/carbu.db`) via `better-sqlite3`, déclaré dans `serverExternalPackages`.
-- **Recharts** pour les courbes, **Tailwind CSS 4** pour le style.
+- **Tailwind CSS 4** pour le style. Pas de bibliothèque de graphiques : la courbe est un SVG
+  généré côté serveur (`src/components/PriceChart.tsx`).
 - **Tout tourne en local sur le Mac** : pas de déploiement, pas de base distante.
   L'ingestion est planifiée par launchd (`scripts/launchd/`), toutes les 30 minutes.
 - `tsx` pour exécuter les scripts TypeScript sans étape de build.
@@ -131,6 +132,12 @@ meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus 
   connues, l'enseigne suffit.
 - **Pas de superposition de plusieurs stations sur une même courbe.** Illisible au-delà de
   4 séries qui se croisent.
+- **Aucun composant client.** La page entière est rendue côté serveur, graphique compris.
+  Recharts a été retiré le 19/08/2026 : il faisait du graphique le seul élément dépendant du
+  bundle, donc le seul à disparaître quand le JavaScript ne s'exécute pas (constaté sur iPhone).
+  Une page personnelle en lecture seule n'a aucune raison d'exiger 900 Ko de JavaScript.
+  Corollaire : pas d'infobulle au survol — sur un téléphone elle n'existe pas de toute façon.
+  Les points remarquables (plus bas de la période, prix actuel) sont étiquetés directement.
 
 ## Règles de travail
 
