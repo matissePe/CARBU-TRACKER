@@ -1,11 +1,12 @@
 # Stations suivies
 
 Liste établie le 19/08/2026 à partir du flux instantané (`where=cp in ("56000","56860")`).
+**9 stations dans le périmètre.**
 
 Les données publiques **n'incluent ni le nom ni l'enseigne** des stations : la colonne « Enseigne »
 est une correspondance manuelle, à compléter par Matisse. Elle sert uniquement à l'affichage.
 
-## Actives dans le flux
+## Périmètre (9 stations actives)
 
 | id | CP | Commune | Adresse | Enseigne (à compléter) | Carburants observés |
 |---|---|---|---|---|---|
@@ -13,16 +14,19 @@ est une correspondance manuelle, à compléter par Matisse. Elle sert uniquement
 | 56000004 | 56000 | Vannes | ZC Parc Lann | _à compléter_ | Gazole, E10, SP98, E85, GPLc |
 | 56000005 | 56000 | Vannes | 8 avenue de Suffren | _à compléter_ | Gazole, E10, SP98, E85 |
 | 56000006 | 56000 | Vannes | 6 avenue Georges Pompidou | _à compléter_ | Gazole, E10, SP98 |
+| 56000008 | 56000 | Vannes | 16 avenue de la Marne | _à compléter_ | Gazole, E10, SP98 |
 | 56000009 | 56000 | Vannes | boulevard de la Paix | _à compléter_ | Gazole, E10, E85 |
 | 56006001 | 56000 | Vannes | 101 avenue de la Marne | _à compléter_ | les 6 carburants |
 | 56860003 | 56860 | Séné | route de Nantes | _à compléter_ | Gazole, E10, SP98, E85 |
 | 56860004 | 56860 | Séné | 165 route de Nantes | _à compléter_ | Gazole, E10, E85 |
 
-## Cas à trancher
+## Note sur la station 56000008
 
-| id | Situation | Décision |
-|---|---|---|
-| 56000008 | 16 avenue de la Marne — **Ploeren** dans le flux instantané, **VANNES** dans les archives. CP 56000. Station très active (643 changements de prix en 2026). | à trancher : l'inclure ou non ? |
+Le flux instantané la rattache à **Ploeren**, les archives annuelles à **VANNES**.
+Tranché par Matisse le 19/08/2026 : elle est **à Vannes**, elle fait partie du périmètre.
+
+C'est l'illustration la plus nette du piège n°3 : la commune renvoyée par la source est
+peu fiable, seul l'id de station fait foi.
 
 ## Ids présents dans les archives mais sans aucun prix (stations fermées)
 

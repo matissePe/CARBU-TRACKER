@@ -5,7 +5,7 @@ l'évolution des prix des carburants dans les stations-service de **Vannes** et 
 
 ## Objectif fonctionnel
 
-1. Lister les stations-service de Vannes et Séné (8 actives recensées, cf. docs/STATIONS.md).
+1. Lister les stations-service de Vannes et Séné (9 actives recensées, cf. docs/STATIONS.md).
 2. Permettre de sélectionner une (ou plusieurs) station(s).
 3. Permettre de sélectionner un carburant (Gazole, SP95, E10, SP98, E85, GPLc — ids 1 à 6 à la source).
 4. Afficher l'**historique des prix sous forme de courbe** + les **tendances**
@@ -87,7 +87,8 @@ _(à créer avec le projet — mettre à jour cette section dès que le `package
 - [x] Init du dépôt et de la documentation
 - [x] Valider la source de données et son schéma ([docs/DATA-SOURCE.md](docs/DATA-SOURCE.md))
 - [x] Recenser les stations de Vannes et Séné ([docs/STATIONS.md](docs/STATIONS.md))
-- [ ] Trancher le cas de la station 56000008 (Ploeren ?) et renseigner les enseignes
+- [x] Trancher le cas de la station 56000008 → elle est à Vannes, incluse
+- [ ] Renseigner les enseignes des 9 stations dans docs/STATIONS.md
 - [ ] Scaffolding Next.js + TypeScript
 - [ ] Schéma SQLite + migration initiale
 - [ ] Backfill depuis les archives annuelles 2007→2026 (parsing XML en streaming)
