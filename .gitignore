@@ -1,0 +1,40 @@
+# dépendances
+node_modules/
+.pnp
+.pnp.js
+
+# build
+.next/
+out/
+dist/
+build/
+
+# données locales (source de vérité de l'historique, mais hors git)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# cache des appels à l'API publique
+.cache/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# tests / couverture
+coverage/
