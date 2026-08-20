@@ -81,9 +81,9 @@ copier-coller si les deux ont divergé.
 - **403 `BadJwtToken`** → le sujet VAPID n'est pas une URL acceptable pour Apple. Il doit être un
   `mailto:` ou un `https:` réel ; `localhost` est refusé.
 - **Rien ne part depuis des mois** → c'est probablement normal, cinq bascules par an. Lever le
-  doute avec une notification de test (étape 4) plutôt qu'en attendant. Vérifier dans la base :
-  Dans la base, `select * from push_state;` montre la couleur courante et `select * from
-  push_log;` l'historique des envois.
+  doute avec une notification de test (étape 4) plutôt qu'en attendant. Dans la base,
+  `select * from push_state;` montre la couleur courante et `select * from push_log;`
+  l'historique des envois.
 - **Les tâches planifiées s'arrêtent** → GitHub désactive un `schedule` après 60 jours sans
   activité sur le dépôt. Le site cesse alors de se régénérer, et les notifications avec.
 
