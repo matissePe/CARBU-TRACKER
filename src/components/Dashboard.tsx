@@ -4,13 +4,13 @@ import PriceChart, { type ChartPoint } from '@/components/PriceChart';
 import RankList from '@/components/RankList';
 import Verdict from '@/components/Verdict';
 import { STATIONS, stationName, stationSubtitle } from '@/config/stations';
-import { TANK_LITERS, perTank } from '@/config/vehicle';
+import { TANK_LITERS, formatEuros, perTank, tankPrice } from '@/config/vehicle';
 import { POSITION_DAYS, buildAdvice } from '@/lib/advice';
 import { FUELS, FUEL_META, formatPrice, type Fuel } from '@/lib/fuels';
 import { formatDate, formatDateTime, nowInParis, parisDaysAgo, toEpoch } from '@/lib/paris-time';
 import { bestPriceSeries, history } from '@/lib/prices';
 import { computeStats, ranking } from '@/lib/trends';
-import { PERIODS, pagePath, type DashboardProps } from '@/lib/routes';
+import { CHART_ANCHOR, PERIODS, pagePath, type DashboardProps } from '@/lib/routes';
 
 export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps) {
   const period = PERIODS.find((candidate) => candidate.key === periodKey) ?? PERIODS[0];
@@ -92,7 +92,7 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
             <p className="bg-surface px-5 pb-5 pt-1 text-[13px] leading-relaxed text-ink-muted sm:px-6">
               Entre la moins chère et la plus chère,{' '}
               <span className="font-medium text-ink">
-                {spread.toFixed(2).replace('.', ',')} € d&apos;écart
+                {formatEuros(spread)} d&apos;écart
               </span>{' '}
               sur un plein.
             </p>
@@ -111,7 +111,7 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
         </div>
 
         <div className="grid min-w-0 content-start gap-px bg-surface">
-          <section className="bg-surface px-5 py-5 sm:px-6">
+          <section id={CHART_ANCHOR} className="scroll-mt-2 bg-surface px-5 py-5 sm:px-6">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-sm font-semibold">
                 {focused ? stationName(focused) : FUEL_META[fuel].label}
@@ -138,14 +138,18 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
                     key={candidate.key}
                     href={href({ periodKey: candidate.key })}
                     active={candidate.key === period.key}
+                    keepScroll
                   >
                     {candidate.label}
                   </Chip>
                 ))}
               </div>
+              {/* Le prix au litre situe la courbe, le prix du plein est ce qu'on paie. */}
               <p className="font-mono text-[11px] text-ink-muted">
                 {series.length > 0
-                  ? `dernier prix ${formatPrice(series[series.length - 1].priceMilli)}`
+                  ? `${formatPrice(series[series.length - 1].priceMilli)} · plein ${formatEuros(
+                      tankPrice(series[series.length - 1].priceMilli),
+                    )}`
                   : ''}
               </p>
             </div>

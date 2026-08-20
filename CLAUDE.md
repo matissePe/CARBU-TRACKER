@@ -58,6 +58,12 @@ Les trois pièges les plus coûteux, en résumé :
   Le premier rendu client doit rester identique au rendu serveur, sinon React signale un écart
   d'hydratation — d'où le passage au relatif dans un `useEffect` et non à la volée.
   Corollaire : ne jamais calculer d'âge au build. `ranking()` ne renvoie plus `ageHours`.
+- **Corollaire n°2 des pages statiques : cliquer une station est une navigation, pas un filtre.**
+  Chaque combinaison station/carburant/période est un fichier séparé, donc Next remonterait en
+  haut de page à chaque clic — l'inverse du geste, puisqu'on clique une station *pour* voir sa
+  courbe. `StationLink` navigue donc avec `scroll={false}` (la place de lecture est conservée)
+  et, sous 640 px seulement, amène la section `#courbe` sous les yeux. Sur ordinateur les deux
+  colonnes sont déjà visibles ensemble : rien à faire.
 - `tsx` pour exécuter les scripts TypeScript sans étape de build.
 
 ### Carte du code
@@ -71,7 +77,7 @@ Les trois pièges les plus coûteux, en résumé :
 | `src/lib/advice.ts` | position dans la fourchette 90 j, sens de variation 14 j, formulation du conseil |
 | `src/lib/paris-time.ts` | manipulation des horodatages naïfs en heure de Paris |
 | `src/lib/trends.ts` | variations 7/30/90 j, min/max, moyenne pondérée, classement des stations |
-| `src/config/vehicle.ts` | réservoir de référence, conversion d'un écart de prix en euros par plein |
+| `src/config/vehicle.ts` | réservoir de référence, prix d'un plein, écart en euros par plein, format des montants |
 | `scripts/backfill.ts` | archives annuelles → base (streaming, ISO-8859-1) |
 | `scripts/ingest.ts` | flux instantané → base |
 
@@ -160,7 +166,8 @@ fausse piste sur la version de Safari : l'iPhone n'y était pour rien.
   connues, l'enseigne suffit.
 - **Pas de superposition de plusieurs stations sur une même courbe.** Illisible au-delà de
   4 séries qui se croisent.
-- **Le graphique est le seul composant client de la page.** Conséquence à garder en tête :
+- **Le graphique est le seul composant client *visible* de la page** (les deux autres,
+  `RelativeTime` et `StationLink`, n'ajoutent rien à l'écran). Conséquence à garder en tête :
   si le bundle ne s'exécute pas, toute la page s'affiche normalement et **seule la courbe
   disparaît**. Un symptôme « le graphique ne s'affiche pas » est donc presque toujours un
   problème de chargement du JavaScript, pas un problème de graphique.

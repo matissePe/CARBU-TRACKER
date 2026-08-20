@@ -29,3 +29,9 @@ export function isPeriodKey(value: string): value is PeriodKey {
 export function isKnownFuel(value: string): value is Fuel {
   return (FUELS as readonly string[]).includes(value);
 }
+
+/**
+ * Ancre de la section qui porte la courbe. Changer de station ne change *que* cette section :
+ * sur mobile elle est tout en bas de page, d'où le défilement automatique (cf. `StationLink`).
+ */
+export const CHART_ANCHOR = 'courbe';

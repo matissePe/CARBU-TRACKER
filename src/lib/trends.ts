@@ -1,5 +1,5 @@
 import { parisDaysAgo, toEpoch } from '@/lib/paris-time';
-import { perTank } from '@/config/vehicle';
+import { perTank, tankPrice } from '@/config/vehicle';
 import { distributingStations, history, latestPrice, priceAt, type HistoryPoint } from '@/lib/prices';
 import type { Fuel } from '@/lib/fuels';
 import { STATIONS, type Station } from '@/config/stations';
@@ -80,6 +80,8 @@ export type RankedStation = {
   station: Station;
   priceMilli: number;
   recordedAt: string;
+  /** Ce que coûte le plein complet à ce prix, en euros — le montant réellement débité. */
+  fullTank: number;
   /** Surcoût par rapport à la station la moins chère, en euros sur un plein. */
   extraPerTank: number;
   /** Position du prix entre le moins cher et le plus cher, pour la barre de comparaison. */
@@ -117,6 +119,7 @@ export function ranking(fuel: Fuel): RankedStation[] {
 
   return rows.map((row) => ({
     ...row,
+    fullTank: tankPrice(row.priceMilli),
     extraPerTank: perTank(row.priceMilli - cheapest),
     barPercent: span === 0 ? 100 : Math.round(((row.priceMilli - cheapest) / span) * 88) + 12,
   }));

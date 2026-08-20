@@ -1,8 +1,7 @@
-import Link from 'next/link';
-
-import { TANK_LITERS } from '@/config/vehicle';
+import { TANK_LITERS, formatEuros } from '@/config/vehicle';
 import { stationName, stationSubtitle } from '@/config/stations';
 import RelativeTime from '@/components/RelativeTime';
+import StationLink from '@/components/StationLink';
 import { formatPrice } from '@/lib/fuels';
 import { STALE_HOURS, type RankedStation } from '@/lib/trends';
 
@@ -19,7 +18,7 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
     <section className="min-w-0 bg-surface">
       <div className="flex items-baseline justify-between px-5 pb-2 pt-5 sm:px-6">
         <h2 className="text-sm font-semibold">Le moins cher maintenant</h2>
-        <span className="text-xs text-ink-muted">écart sur {TANK_LITERS} L</span>
+        <span className="text-xs text-ink-muted">plein de {TANK_LITERS} L · écart</span>
       </div>
 
       <ul>
@@ -27,9 +26,9 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
           const best = index === 0;
           return (
             <li key={row.station.id} className="border-t border-hairline first:border-t-0">
-              <Link
+              <StationLink
                 href={hrefFor(row.station.id)}
-                aria-current={row.station.id === focusedId ? 'true' : undefined}
+                current={row.station.id === focusedId}
                 className={`block px-5 py-3 transition-colors sm:px-6 ${
                   best ? 'bg-accent-wash' : 'hover:bg-surface-2'
                 } ${row.station.id === focusedId ? 'ring-1 ring-inset ring-hairline' : ''}`}
@@ -51,7 +50,8 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
                     <RelativeTime recordedAt={row.recordedAt} staleAfterHours={STALE_HOURS} />
                   </span>
                   <span className="shrink-0 whitespace-nowrap">
-                    {best ? '—' : `+${row.extraPerTank.toFixed(2).replace('.', ',')} €`}
+                    <span className="text-ink">{formatEuros(row.fullTank)}</span>
+                    {best ? '' : ` · +${formatEuros(row.extraPerTank)}`}
                   </span>
                 </div>
 
@@ -61,7 +61,7 @@ export default function RankList({ rows, focusedId, hrefFor }: Props) {
                     style={{ width: `${row.barPercent}%` }}
                   />
                 </div>
-              </Link>
+              </StationLink>
             </li>
           );
         })}
