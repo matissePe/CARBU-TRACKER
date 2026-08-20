@@ -80,6 +80,7 @@ Les trois pièges les plus coûteux, en résumé :
 | `src/lib/notifications.ts` | quand déranger : bascule au feu vert, verrou 21 j, heures calmes |
 | `src/lib/push.ts` | clés VAPID, empreinte d'abonnement — partagé navigateur / expéditeur |
 | `public/sw.js` | service worker de notification, sans cache ni `fetch` |
+| `public/icon.svg` | l'icône (goutte-niveau), source des trois PNG |
 | `src/config/vehicle.ts` | réservoir de référence, prix d'un plein, écart en euros par plein, format des montants |
 | `scripts/backfill.ts` | archives annuelles → base (streaming, ISO-8859-1) |
 | `scripts/ingest.ts` | flux instantané → base |
@@ -184,7 +185,15 @@ Deux contraintes d'iOS dictent le reste :
 `src/app/manifest.ts` et les métadonnées `appleWebApp` de `layout.tsx` font que « Sur l'écran
 d'accueil » depuis Safari installe l'app sans barre d'adresse, avec son icône. iOS ignore le
 manifeste pour l'icône : il lui faut le lien `apple-touch-icon` (180×180, opaque).
-Les icônes sont générées depuis `public/icon.svg`.
+Les icônes sont générées depuis `public/icon.svg` — dessin, commandes de regénération et règles
+dans [docs/ICONE.md](docs/ICONE.md).
+
+**iOS ne bascule pas entre une icône claire et une icône sombre** : le manifeste n'a pas de
+sélecteur de thème pour les icônes (proposition W3C, pas une fonctionnalité), `apple-touch-icon`
+n'honore pas `media`, et l'icône est matricée à l'installation. Sans importance en pratique : une
+icône porte son propre fond opaque, elle ne se pose pas sur une surface qui change. Le seul
+endroit où l'adaptation marche est l'onglet du navigateur, via `public/favicon.svg`. Vérifié le
+20/08/2026, ne pas re-chercher.
 
 ### Consulter depuis le téléphone en dev
 

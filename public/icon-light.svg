@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Variante claire de la goutte-niveau, posée sur le fond de page de l'app plutôt que sur son
+    panneau sombre. iOS ne sait pas basculer seul entre les deux (cf. docs/ICONE.md) : c'est un
+    choix, pas une adaptation automatique. Pour l'installer à la place de l'autre, recopier ce
+    contenu dans icon.svg et regénérer les PNG.
+  -->
+  <rect width="512" height="512" fill="#f1f3f1"/>
+  <defs>
+    <clipPath id="goutte">
+      <path d="M256 84 C316 200 380 254 380 314 A124 124 0 0 1 132 314 C132 254 196 200 256 84 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#goutte)">
+    <rect x="120" y="70" width="280" height="262" fill="#e9d2a4"/>
+    <rect x="120" y="332" width="280" height="120" fill="#e8a317"/>
+  </g>
+</svg>

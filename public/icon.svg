@@ -1,6 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    La goutte-niveau. Le carburant et la jauge dans une seule forme : la goutte est remplie
+    au tiers, comme la jauge de position de l'app (bas dans la fourchette, c'est le moment
+    d'y aller). L'ambre est celui du pistolet gazole des pompes françaises, jeton
+    accent-bright de globals.css.
+
+    Le fond est opaque à dessein : iOS masque l'icône par une superellipse et n'accepte pas la
+    transparence pour l'écran d'accueil. Tout tient dans le carré central pour survivre au
+    masque. C'est le fichier source des trois PNG, cf. docs/ICONE.md.
+  -->
   <rect width="512" height="512" fill="#141a18"/>
-  <path d="M64 176 L152 176 L152 248 L216 248 L216 344 L296 344 L296 264 L360 264 L360 152 L448 152"
-        fill="none" stroke="#e8a317" stroke-width="46"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <clipPath id="goutte">
+      <path d="M256 84 C316 200 380 254 380 314 A124 124 0 0 1 132 314 C132 254 196 200 256 84 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#goutte)">
+    <rect x="120" y="70" width="280" height="262" fill="#6b4a12"/>
+    <rect x="120" y="332" width="280" height="120" fill="#e8a317"/>
+  </g>
 </svg>

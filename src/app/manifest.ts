@@ -23,6 +23,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#f1f3f1',
     theme_color: '#141a18',
     icons: [
+      // Safari 26 sait matricer un SVG de manifeste lui-même, à toutes les tailles dont il a
+      // besoin. Les PNG restent la solution de repli pour tout le reste.
+      { src: `${base}/icon.svg`, sizes: 'any', type: 'image/svg+xml' },
       { src: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' },
       { src: `${base}/icon-512.png`, sizes: '512x512', type: 'image/png' },
       { src: `${base}/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },

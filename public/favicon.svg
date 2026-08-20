@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Le seul endroit où l'icône s'adapte vraiment au thème : l'onglet du navigateur.
+    Un favicon SVG est chargé comme un document, donc la media query s'y applique et suit le
+    réglage système en direct. L'icône de l'écran d'accueil, elle, est matricée à l'installation
+    et ne sait pas faire ça, cf. docs/ICONE.md.
+
+    Pas de fond : un onglet n'exige pas d'opacité, et la goutte se détache mieux sans.
+  -->
+  <style>
+    :root { --empty: #cbb079; --full: #b8800e; }
+    @media (prefers-color-scheme: dark) {
+      :root { --empty: #6b4a12; --full: #e8a317; }
+    }
+  </style>
+  <defs>
+    <clipPath id="goutte">
+      <path d="M256 60 C324 190 396 250 396 316 A140 140 0 0 1 116 316 C116 250 188 190 256 60 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#goutte)">
+    <rect x="100" y="40" width="312" height="300" fill="var(--empty)"/>
+    <rect x="100" y="340" width="312" height="140" fill="var(--full)"/>
+  </g>
+</svg>

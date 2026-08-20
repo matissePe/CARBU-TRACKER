@@ -11,9 +11,19 @@ const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 export const metadata: Metadata = {
   title: 'Où faire le plein',
   description: 'Prix du gazole à Vannes et Séné : où c’est le moins cher, et quand y aller.',
-  // iOS ignore le manifeste pour l'icône de l'écran d'accueil : il lui faut apple-touch-icon.
+  /*
+   * iOS ignore le manifeste pour l'icône de l'écran d'accueil : il lui faut apple-touch-icon,
+   * un PNG opaque de 180 px.
+   *
+   * Le SVG vient en premier pour l'onglet du navigateur : c'est le seul des trois qui suive le
+   * thème système, parce qu'il est chargé comme un document et que sa media query s'applique.
+   * L'icône de l'écran d'accueil, matricée à l'installation, en est incapable (docs/ICONE.md).
+   */
   icons: {
-    icon: [{ url: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' }],
+    icon: [
+      { url: `${base}/favicon.svg`, type: 'image/svg+xml' },
+      { url: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' },
+    ],
     apple: [{ url: `${base}/apple-touch-icon.png`, sizes: '180x180' }],
   },
   appleWebApp: {
