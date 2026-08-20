@@ -77,9 +77,13 @@ Les trois pièges les plus coûteux, en résumé :
 | `src/lib/advice.ts` | position dans la fourchette 90 j, sens de variation 14 j, formulation du conseil |
 | `src/lib/paris-time.ts` | manipulation des horodatages naïfs en heure de Paris |
 | `src/lib/trends.ts` | variations 7/30/90 j, min/max, moyenne pondérée, classement des stations |
+| `src/lib/notifications.ts` | quand déranger : bascule au feu vert, verrou 21 j, heures calmes |
+| `src/lib/push.ts` | clés VAPID, empreinte d'abonnement — partagé navigateur / expéditeur |
+| `public/sw.js` | service worker de notification, sans cache ni `fetch` |
 | `src/config/vehicle.ts` | réservoir de référence, prix d'un plein, écart en euros par plein, format des montants |
 | `scripts/backfill.ts` | archives annuelles → base (streaming, ISO-8859-1) |
 | `scripts/ingest.ts` | flux instantané → base |
+| `scripts/notify.ts` | envoie la notification de feu vert, si elle est due |
 
 ## Modèle de données (cible)
 
@@ -145,6 +149,26 @@ Trois conclusions, qui pilotent `src/lib/advice.ts` :
 chère plutôt qu'à une station quelconque vaut ~29 €/an (écart moyen mesuré de 0,048 €/L) ; le
 meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus du conseil.
 
+### Notifications push
+
+Une seule alerte : **le passage au feu vert**, ~5 fois par an. Détail, chiffres et procédure
+d'activation dans [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — le lire avant d'y toucher.
+
+Le point à ne pas redécouvrir : **le classement ne se notifie pas.** Rejeu des 12 derniers mois,
+la station la moins chère change **109 fois par an pour 1,30 € d'écart moyen** sur un plein, soit
+109 dérangements pour 12 pleins. Une notification ne peut adresser que le « quand », plafonné à
+une dizaine d'euros par an ; le « où », qui vaut trois fois plus, se regarde au moment de partir.
+
+Deux contraintes d'iOS dictent le reste :
+
+- `userVisibleOnly` est obligatoire, donc **aucun push silencieux** — la pastille de l'icône
+  s'allume avec la notification et ne peut s'éteindre qu'à l'ouverture de l'app. Elle dit « il y
+  a un feu vert que tu n'as pas regardé », pas « le feu est vert ». Ne pas promettre l'inverse.
+- L'abonnement est **recopié à la main** dans un secret du dépôt : il n'y a pas de serveur pour
+  le recevoir. Le site publie son empreinte pour que l'app détecte elle-même une invalidation ;
+  sans ce garde-fou les notifications s'arrêteraient en silence, et le silence est justement le
+  comportement normal 360 jours par an.
+
 ### Ajouter à l'écran d'accueil
 
 `src/app/manifest.ts` et les métadonnées `appleWebApp` de `layout.tsx` font que « Sur l'écran
@@ -199,6 +223,7 @@ Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop
 | `npm run ingest` | récupère les prix actuels et insère les changements |
 | `npm run backfill` | importe les archives annuelles 2007→année courante |
 | `npm run backfill -- 2024 2026` | rejoue une plage précise |
+| `npm run notify` | décide si une notification est due, et l'envoie |
 | `npm run lint` / `npm run typecheck` | qualité |
 
 ## État d'avancement
@@ -218,7 +243,9 @@ Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop
       pour la lisibilité : sans elles, l'UI n'affiche que des adresses)
 - [ ] Installer l'agent launchd d'ingestion (cf. `scripts/launchd/`)
 - [x] Refonte autour des deux questions : conseil, jauge de position, classement, mobile d'abord
-- [ ] Alerte quand le prix descend dans le quart bas de sa fourchette 90 jours
+- [x] Notifications push : alerte au passage au feu vert (~5/an), pastille sur l'icône
+- [ ] ~~Alerte quand le prix descend dans le quart bas de sa fourchette 90 jours~~ — écartée :
+      doublon du feu vert, même fréquence mesurée (5/an) pour un signal moins souvent actionnable
 - [ ] Rétrospective « combien j'aurais économisé » sur 12 mois
 
 <!-- BEGIN:nextjs-agent-rules -->

@@ -57,10 +57,27 @@ jobs:
       - name: Récupérer les prix du moment
         run: npm run ingest
 
+      # Un site statique n'a pas de serveur, mais ce job en est un : réseau, base à jour, et il
+      # sait ce qui vient de changer. Il ne notifie que la bascule au feu vert — cinq fois par an.
+      # Un échec d'envoi ne doit pas empêcher la publication du site, qui est l'essentiel.
+      - name: Prévenir si le feu passe au vert
+        continue-on-error: true
+        env:
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: npm run notify
+
       - name: Générer le site
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-        run: npm run build
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+        # L'empreinte de l'abonnement est publiée dans la page : c'est ce qui permet à l'app de
+        # constater que le téléphone n'est plus abonné et de réclamer un nouveau copier-coller,
+        # au lieu de se taire pendant des mois — le silence étant le comportement normal.
+        run: |
+          export NEXT_PUBLIC_PUSH_FINGERPRINT="$(npx tsx scripts/push-fingerprint.ts)"
+          echo "Empreinte publiée : ${NEXT_PUBLIC_PUSH_FINGERPRINT:-aucune}"
+          npm run build
 
       # Après le build : si la génération échoue, la base publiée reste celle d'avant.
       - name: Republier la base

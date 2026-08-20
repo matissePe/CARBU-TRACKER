@@ -1,6 +1,7 @@
 import Chip from '@/components/Chip';
 import Gauge from '@/components/Gauge';
 import PriceChart, { type ChartPoint } from '@/components/PriceChart';
+import PushSetup from '@/components/PushSetup';
 import RankList from '@/components/RankList';
 import Verdict from '@/components/Verdict';
 import { STATIONS, stationName, stationSubtitle } from '@/config/stations';
@@ -212,6 +213,8 @@ export default function Dashboard({ fuel, stationId, periodKey }: DashboardProps
             parfait fait perdre de l&apos;argent plus souvent que ça n&apos;en fait gagner.
           </p>
         </div>
+        <PushSetup />
+
         <p className="mt-4 font-mono text-[11px] text-ink-muted">
           Page générée le {formatDateTime(toEpoch(nowInParis()))} · les prix sont ceux connus à ce
           moment-là.

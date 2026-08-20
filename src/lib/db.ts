@@ -45,6 +45,22 @@ CREATE TABLE IF NOT EXISTS station_fuels (
   PRIMARY KEY (station_id, fuel)
 ) WITHOUT ROWID;
 
+-- Ce que l'expéditeur de notifications se rappelle d'une exécution à l'autre : essentiellement
+-- la couleur du feu au tour précédent, pour ne notifier que les bascules et pas les 106 jours
+-- de feu vert qui suivent.
+CREATE TABLE IF NOT EXISTS push_state (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+) WITHOUT ROWID;
+
+-- Notifications réellement parties, pour faire respecter le verrou de trois semaines.
+CREATE TABLE IF NOT EXISTS push_log (
+  kind     TEXT NOT NULL,
+  sent_at  TEXT NOT NULL,
+  detail   TEXT
+);
+
 -- Trace des imports, pour savoir quelles années ont déjà été backfillées.
 CREATE TABLE IF NOT EXISTS ingest_log (
   source      TEXT NOT NULL,
