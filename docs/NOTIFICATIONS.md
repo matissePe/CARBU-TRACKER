@@ -67,6 +67,10 @@ copier-coller si les deux ont divergé.
    « Notifications », toucher « Préviens-moi », accepter, puis « Copier le code ».
 3. Coller ce code dans `PUSH_SUBSCRIPTION` (`gh secret set PUSH_SUBSCRIPTION`). À la prochaine
    publication, la section affiche « Notifications actives ».
+4. Vérifier tout de suite, sans attendre la prochaine bascule :
+   `gh workflow run "Publier le site" -f notification_de_test=true`. Le test court-circuite les
+   trois garde-fous mais rien d'autre — même clé, même abonnement, même service worker — et ne
+   consomme pas le verrou de 21 jours.
 
 ## Quand ça casse
 
@@ -76,9 +80,10 @@ copier-coller si les deux ont divergé.
   n'échoue pas : la publication du site passe avant.
 - **403 `BadJwtToken`** → le sujet VAPID n'est pas une URL acceptable pour Apple. Il doit être un
   `mailto:` ou un `https:` réel ; `localhost` est refusé.
-- **Rien ne part depuis des mois** → c'est probablement normal. Vérifier dans la base :
-  `select * from push_state;` doit montrer la couleur courante, `select * from push_log;`
-  l'historique des envois.
+- **Rien ne part depuis des mois** → c'est probablement normal, cinq bascules par an. Lever le
+  doute avec une notification de test (étape 4) plutôt qu'en attendant. Vérifier dans la base :
+  Dans la base, `select * from push_state;` montre la couleur courante et `select * from
+  push_log;` l'historique des envois.
 - **Les tâches planifiées s'arrêtent** → GitHub désactive un `schedule` après 60 jours sans
   activité sur le dépôt. Le site cesse alors de se régénérer, et les notifications avec.
 

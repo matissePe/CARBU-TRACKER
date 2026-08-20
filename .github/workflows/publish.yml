@@ -10,6 +10,13 @@ on:
   schedule:
     - cron: '0 */2 * * *'
   workflow_dispatch:
+    inputs:
+      # Le feu vert ne bascule que cinq fois par an : sans ce déclencheur, on ne saurait pas
+      # avant des semaines si la chaîne fonctionne. Le test ignore les garde-fous, rien d'autre.
+      notification_de_test:
+        description: Envoyer une notification de test
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -65,6 +72,7 @@ jobs:
         env:
           PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_TEST: ${{ inputs.notification_de_test && '1' || '' }}
         run: npm run notify
 
       - name: Générer le site

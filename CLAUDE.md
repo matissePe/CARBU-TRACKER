@@ -153,6 +153,8 @@ meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus 
 
 Une seule alerte : **le passage au feu vert**, ~5 fois par an. Détail, chiffres et procédure
 d'activation dans [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — le lire avant d'y toucher.
+Pour vérifier la chaîne sans attendre une bascule :
+`gh workflow run "Publier le site" -f notification_de_test=true`.
 
 Le point à ne pas redécouvrir : **le classement ne se notifie pas.** Rejeu des 12 derniers mois,
 la station la moins chère change **109 fois par an pour 1,30 € d'écart moyen** sur un plein, soit

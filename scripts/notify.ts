@@ -12,13 +12,21 @@
  */
 import webpush from 'web-push';
 
-import { decide, recordSent } from '@/lib/notifications';
-import { VAPID_PUBLIC_KEY, VAPID_SUBJECT, fingerprint } from '@/lib/push';
+import { type Decision, decide, recordSent } from '@/lib/notifications';
+import { SITE_URL, VAPID_PUBLIC_KEY, VAPID_SUBJECT, fingerprint } from '@/lib/push';
 
 async function main() {
+  /*
+   * Le feu vert ne bascule que cinq fois par an : sans déclencheur manuel, on ne saurait pas
+   * avant des semaines si la chaîne fonctionne, et le silence est indistinguable de la panne.
+   * Le test court-circuite les trois garde-fous, mais rien d'autre — même clé, même abonnement,
+   * même service worker.
+   */
+  const test = process.env.PUSH_TEST === '1';
+
   // Évalué avant même de savoir s'il y a un abonnement : c'est ce qui mémorise la couleur du
   // feu. Sans ça, le tout premier tour après un abonnement serait aveugle et raterait la bascule.
-  const decision = decide();
+  const decision = test ? testDecision() : decide();
   if (!decision.send) {
     console.log(`Rien à notifier — ${decision.reason}.`);
     return;
@@ -38,7 +46,8 @@ async function main() {
 
   try {
     await webpush.sendNotification(subscription, JSON.stringify(decision.send));
-    recordSent('green', decision.detail);
+    // Un test ne consomme pas le verrou de 21 jours : il ne dit rien sur le marché.
+    if (!test) recordSent('green', decision.detail);
     console.log('Notification envoyée.');
   } catch (error) {
     const status = (error as { statusCode?: number }).statusCode;
@@ -54,6 +63,21 @@ async function main() {
     }
     throw error;
   }
+}
+
+function testDecision(): Decision {
+  return {
+    detail: 'test manuel',
+    send: {
+      web_push: 8030,
+      notification: {
+        title: 'Test',
+        body: 'Si tu lis ça, la chaîne de notification fonctionne de bout en bout.',
+        navigate: `${SITE_URL}/`,
+        app_badge: 1,
+      },
+    },
+  };
 }
 
 main().catch((error) => {
