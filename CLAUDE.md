@@ -151,8 +151,16 @@ meilleur réglage de timing, ~10 €/an au mieux. D'où le classement au-dessus 
 
 ### Notifications push
 
-Une seule alerte : **le passage au feu vert**, ~5 fois par an. Détail, chiffres et procédure
+Une seule alerte : **le passage au feu vert**, ~13 fois par an. Détail, chiffres et procédure
 d'activation dans [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — le lire avant d'y toucher.
+Un seul garde-fou reste : **seules les bascules notifient** (la couleur du tour précédent vit dans
+`push_state`). Le verrou de 21 jours et les heures calmes ont été retirés le 20/08/2026 à la
+demande — ne pas les réintroduire sans le demander.
+
+**Mesurer une règle en rejouant l'historique : ancrer la fenêtre sur le jour rejoué.**
+`computeDirection` lit `parisDaysAgo(14)`, donc l'horloge réelle. Un rejeu naïf qui appelle
+`buildAdvice` sur une tranche passée obtient Δ14j = 0 pour tous les jours et n'emprunte jamais la
+branche « ça remonte » — c'est ce qui avait sous-estimé le compte à 5 bascules par an au lieu de 13.
 Pour vérifier la chaîne sans attendre une bascule :
 `gh workflow run "Publier le site" -f notification_de_test=true`.
 
@@ -245,7 +253,10 @@ Faire `nvm use` avant tout (Node 24 ; le Node par défaut de la machine est trop
       pour la lisibilité : sans elles, l'UI n'affiche que des adresses)
 - [ ] Installer l'agent launchd d'ingestion (cf. `scripts/launchd/`)
 - [x] Refonte autour des deux questions : conseil, jauge de position, classement, mobile d'abord
-- [x] Notifications push : alerte au passage au feu vert (~5/an), pastille sur l'icône
+- [x] Notifications push : alerte au passage au feu vert (~13/an), pastille sur l'icône
+- [ ] Trancher : ne notifier que sur position < 50 % ? 10 des 13 bascules partent aujourd'hui à
+      un prix haut qui remonte (72 à 100 % de la fourchette), ce qui se défend à l'écran mais
+      se défend moins en vibration
 - [ ] ~~Alerte quand le prix descend dans le quart bas de sa fourchette 90 jours~~ — écartée :
       doublon du feu vert, même fréquence mesurée (5/an) pour un signal moins souvent actionnable
 - [ ] Rétrospective « combien j'aurais économisé » sur 12 mois

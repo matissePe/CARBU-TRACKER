@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS push_state (
   updated_at  TEXT NOT NULL
 ) WITHOUT ROWID;
 
--- Notifications réellement parties, pour faire respecter le verrou de trois semaines.
+-- Notifications réellement parties. Plus aucune règle ne le consulte : c'est une trace, pour
+-- savoir après coup ce qui est parti et quand.
 CREATE TABLE IF NOT EXISTS push_log (
   kind     TEXT NOT NULL,
   sent_at  TEXT NOT NULL,

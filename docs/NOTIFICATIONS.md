@@ -1,6 +1,6 @@
 # Notifications
 
-Une seule alerte existe : **le passage au feu vert**. Environ cinq fois par an.
+Une seule alerte existe : **le passage au feu vert**. Une quinzaine de fois par an.
 
 ## Pourquoi celle-là, et pas les autres
 
@@ -9,7 +9,7 @@ Rejeu des 365 derniers jours sur la base, au 20/08/2026 :
 | Événement candidat | Fois par an | Verdict |
 |---|---|---|
 | La station la moins chère change | **109** (écart moyen 1,30 € le plein) | écarté |
-| Le conseil passe au feu vert | **5** épisodes de ~21 j (29 % des jours) | **retenu** |
+| Le conseil passe au feu vert | **13** bascules | **retenu** |
 | Le prix entre dans le quart bas 90 j | 5 | doublon du feu vert |
 | Baisse d'au moins 3 c/L d'un coup | 22 | trop fréquent pour 12 pleins |
 
@@ -18,15 +18,31 @@ La première ligne tranche le débat : la tête du classement change tous les tr
 **Le classement est une réponse qu'on va chercher au moment de partir, jamais une réponse qu'on
 pousse.** Une notification ne peut donc adresser que le « quand » — plafonné à une dizaine
 d'euros par an par la simulation de CLAUDE.md, contre ~29 €/an pour le « où ». Le bénéfice réel
-est de ne pas rater les cinq bons moments de l'année sans y penser, pas l'argent.
+est de ne pas rater les bons moments de l'année sans y penser, pas l'argent.
 
-Trois garde-fous, dans `src/lib/notifications.ts` :
+Un seul garde-fou, dans `src/lib/notifications.ts` : **seules les bascules notifient.** La couleur
+du feu au tour précédent est mémorisée en base (`push_state`) ; sans ça, les 106 jours de feu vert
+annuels sonneraient toutes les deux heures.
 
-- **Seulement les bascules.** La couleur du feu du tour précédent est mémorisée en base
-  (`push_state`) : sans ça, les 106 jours de feu vert annuels sonneraient toutes les deux heures.
-- **Verrou de 21 jours** (`push_log`) : c'est déjà les trois quarts d'un plein.
-- **Heures calmes** : rien avant 8 h ni après 22 h. Un feu vert dure trois semaines en moyenne,
-  il sera encore là au matin.
+Un verrou de 21 jours et des heures calmes (8 h – 22 h) ont existé, puis ont été retirés à la
+demande le 20/08/2026. Conséquence assumée : 13 alertes par an au lieu de 8, et une bascule de
+nuit sonne à l'heure où elle tombe. `push_log` n'est plus qu'une trace, plus aucune règle ne le lit.
+
+## Par quelle branche ça part
+
+Rejeu correct des 12 derniers mois — en ancrant la fenêtre de direction sur le jour rejoué et non
+sur l'horloge, erreur de la première mesure qui avait sous-estimé le compte à 5 :
+
+| Branche du conseil | Bascules /an | Position du prix |
+|---|---|---|
+| « Le creux est passé, ça remonte » | **10** | 72 % à 100 % de la fourchette |
+| « Prix correct, vas-y » (position < 50 %) | 3 | 45 % à 49 % |
+| « Fais le plein maintenant » (position < 30 %) | 0 | — |
+
+**Les trois quarts des alertes partent donc à un prix haut qui remonte**, pas à un bon prix. C'est
+cohérent avec la simulation de CLAUDE.md — « position < 50 % ou rebond » est la seule règle qui bat
+l'inaction — mais un écran qu'on consulte et une vibration ne se valent pas. Question ouverte : ne
+notifier que par les branches de position (2 à 3 fois par an, toujours à un prix réellement bas).
 
 ## Ce qu'iOS exige
 
@@ -68,9 +84,9 @@ copier-coller si les deux ont divergé.
 3. Coller ce code dans `PUSH_SUBSCRIPTION` (`gh secret set PUSH_SUBSCRIPTION`). À la prochaine
    publication, la section affiche « Notifications actives ».
 4. Vérifier tout de suite, sans attendre la prochaine bascule :
-   `gh workflow run "Publier le site" -f notification_de_test=true`. Le test court-circuite les
-   trois garde-fous mais rien d'autre — même clé, même abonnement, même service worker — et ne
-   consomme pas le verrou de 21 jours.
+   `gh workflow run "Publier le site" -f notification_de_test=true`. Le test court-circuite la
+   détection de bascule mais rien d'autre — même clé, même abonnement, même service worker — et
+   n'entre pas dans l'historique des envois.
 
 ## Quand ça casse
 
@@ -80,8 +96,8 @@ copier-coller si les deux ont divergé.
   n'échoue pas : la publication du site passe avant.
 - **403 `BadJwtToken`** → le sujet VAPID n'est pas une URL acceptable pour Apple. Il doit être un
   `mailto:` ou un `https:` réel ; `localhost` est refusé.
-- **Rien ne part depuis des mois** → c'est probablement normal, cinq bascules par an. Lever le
-  doute avec une notification de test (étape 4) plutôt qu'en attendant. Dans la base,
+- **Rien ne part depuis des mois** → possible, les bascules se regroupent. Lever le doute avec
+  une notification de test (étape 4) plutôt qu'en attendant. Dans la base,
   `select * from push_state;` montre la couleur courante et `select * from push_log;`
   l'historique des envois.
 - **Les tâches planifiées s'arrêtent** → GitHub désactive un `schedule` après 60 jours sans

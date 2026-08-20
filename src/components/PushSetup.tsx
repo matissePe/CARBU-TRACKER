@@ -95,9 +95,8 @@ export default function PushSetup() {
       {status === 'off' ? (
         <>
           <p className="mt-3 max-w-prose text-[13px] leading-relaxed text-ink-muted">
-            Environ cinq fois par an, le prix passe au vert après une période haute. C&apos;est le
-            seul moment qui vaut un dérangement — le classement, lui, change trop souvent pour
-            être notifié.
+            Une quinzaine de fois par an, le conseil passe au vert. C&apos;est le seul moment qui
+            vaut un dérangement — le classement, lui, change trop souvent pour être notifié.
           </p>
           <button
             type="button"
@@ -147,8 +146,8 @@ export default function PushSetup() {
 
       {status === 'on' ? (
         <p className="mt-3 max-w-prose text-[13px] leading-relaxed text-ink-muted">
-          Notifications actives. Tu seras prévenu au prochain passage au vert, jamais plus
-          d&apos;une fois toutes les trois semaines et jamais la nuit.
+          Notifications actives. Tu seras prévenu à chaque passage au vert — une quinzaine de
+          fois par an sur l&apos;historique, à l&apos;heure où la bascule tombe.
         </p>
       ) : null}
     </section>

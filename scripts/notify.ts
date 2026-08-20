@@ -17,10 +17,9 @@ import { SITE_URL, VAPID_PUBLIC_KEY, VAPID_SUBJECT, fingerprint } from '@/lib/pu
 
 async function main() {
   /*
-   * Le feu vert ne bascule que cinq fois par an : sans déclencheur manuel, on ne saurait pas
-   * avant des semaines si la chaîne fonctionne, et le silence est indistinguable de la panne.
-   * Le test court-circuite les trois garde-fous, mais rien d'autre — même clé, même abonnement,
-   * même service worker.
+   * Sans déclencheur manuel, on ne saurait pas avant des semaines si la chaîne fonctionne, et
+   * le silence serait indistinguable de la panne. Le test court-circuite la détection de
+   * bascule, mais rien d'autre — même clé, même abonnement, même service worker.
    */
   const test = process.env.PUSH_TEST === '1';
 
@@ -46,7 +45,7 @@ async function main() {
 
   try {
     await webpush.sendNotification(subscription, JSON.stringify(decision.send));
-    // Un test ne consomme pas le verrou de 21 jours : il ne dit rien sur le marché.
+    // Un test n'a rien à faire dans l'historique des envois : il ne dit rien sur le marché.
     if (!test) recordSent('green', decision.detail);
     console.log('Notification envoyée.');
   } catch (error) {
